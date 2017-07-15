@@ -3,7 +3,10 @@ Created on Jul 8, 2017
 
 @author: kennethalamantia
 '''
-from flask import Flask, url_for, render_template
+from flask import Flask, url_for, render_template, g, request, redirect
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from catalog_database_setup import Base, Category, Item
 app = Flask(__name__)
 
 # Routes
@@ -21,23 +24,57 @@ ERROR = HOME + 'error/'
 CATEGORY = '/category/<int:category_id>/'
 EDIT_CATEGORY = CATEGORY + EDIT
 DEL_CATEGORY = CATEGORY + DEL
-ADD_CATEGORY = CATEGORY + ADD
+ADD_CATEGORY = '/category/' + ADD
 
 ITEM = CATEGORY + 'item/<int:item_id>/'
 EDIT_ITEM = ITEM + EDIT
 DEL_ITEM = ITEM + DEL
-ADD_ITEM = ITEM + ADD
+ADD_ITEM = CATEGORY + 'item/' + ADD
+
+# SQL Alchemy Globals
+engine = create_engine('sqlite:///item_catalog.db')
+Base.metadata.bind = engine
+sessionFactory = sessionmaker(bind=engine)
+
+# context functions
+def getSession():
+    '''Creates a new SQL Alchemy session from the global sessionmaker
+    factory object, if none exists.
+    @return: SQLAlchemy Session, new or pre-existing for this app context.
+    '''
+    session = getattr(g, '_database', None)
+    if session is None:
+        session = sessionFactory()
+    return session
+
+
+@app.teardown_appcontext
+def teardown_session(exception=None):
+    '''Closes the SQLAlchemy session.
+    @param exception: any exception raised during the this context
+    '''
+    session = getattr(g, '_database', None)
+    if session:
+        if exception:
+            session.rollback()
+        else:
+            try:
+                session.commit()
+            finally:
+                session.close()
 
 
 @app.route(HOME)
 def home():
     '''Display the home page.
     '''
-    return 'This is the home page.'
+    session = getSession()
+    all_categories = session.query(Category).order_by(Category.name).all()
+    return render_template("category_overview.html", categories=all_categories)
 
 
 @app.route(CATEGORY)
-def dispCategory(category_id):
+def displayCategory(category_id):
     '''Display individual category page.
     '''
     return 'This is an individual category page.'
@@ -49,6 +86,7 @@ def editCategory(category_id):
     '''
     return 'edit a category.'
 
+
 @app.route(DEL_CATEGORY)
 def delCategory(cateogry_id):
     '''Delete a category.
@@ -56,11 +94,28 @@ def delCategory(cateogry_id):
     return 'delete a category.'
 
 
-@app.route(ADD_CATEGORY)
-def addCategory(category_id):
+@app.route(ADD_CATEGORY, methods=['GET', 'POST'])
+def addCategory():
     '''Add a category.
     '''
-    return 'add a category'
+    if request.method == 'POST':
+        name = request.form['new_category_name']
+        if name:
+            session = getSession()
+            duplicate = session.query(Category).filter_by(name=name).one()
+            if duplicate:
+                return render_template("add_category.html", 
+                                       form_error="That category already" \
+                                       + " exists.")
+            newCategory = Category(name=name)
+            session.add(newCategory)
+            session.commit()
+            return redirect(url_for('home'))
+        else:
+            return render_template("add_category.html", 
+                                   form_error="The name can't be blank!")
+    else:
+        return render_template("add_category.html")
 
 
 @app.route(ITEM)
@@ -107,4 +162,4 @@ def errorUpdate():
 
 if __name__ == '__main__':
     app.debug = True
-    app.run()
+    app.run(port=5001)
