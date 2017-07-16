@@ -44,12 +44,12 @@ def getSession():
     '''
     session = getattr(g, '_database', None)
     if session is None:
-        session = sessionFactory()
+        session = g._database = sessionFactory()
     return session
 
 
 @app.teardown_appcontext
-def teardown_session(exception=None):
+def teardown_session(exception):
     '''Closes the SQLAlchemy session.
     @param exception: any exception raised during the this context
     '''
@@ -95,7 +95,6 @@ def delCategory(category_id):
     thisCategory = session.query(Category).filter_by(id=category_id).one()
     if request.method == 'POST' and request.form['confirm_del']:
         session.delete(thisCategory)
-        session.commit()
         return redirect(url_for('home'))
     else:
         return render_template("del_category.html", items=[], category=thisCategory)
