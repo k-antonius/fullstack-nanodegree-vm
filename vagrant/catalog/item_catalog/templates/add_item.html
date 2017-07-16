@@ -4,6 +4,7 @@
 <table>
   <tr>
     <td><h3>Type information about your new item:</h3></td>
+  </tr>
   <tr>
     <td>
       <table>
@@ -23,6 +24,7 @@
           <td><input name="price" type="text"></input></td>
           <td>{{price_error}}</td>
         </tr>
+        <tr>
         <td>Description:</td>
         <td><textarea name="description" rows=5></textarea></td>
         <td>{{description_error}}</td>
@@ -32,6 +34,7 @@
       </tr>
       </form>
     </table>
+  </tr>
   <tr>
     <td><a href="{{url_for('home')}}">Cancel Add</a></td>
   </tr>
