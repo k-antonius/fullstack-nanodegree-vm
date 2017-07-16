@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div>
+{% if not categories %}
+  No food categories to display yet. Add some!
+{% endif %}
+</div>
+<div>
+  <table>
+    {% for category in categories %}
+    <tr>
+      <td><h3>{{category.name}}</h3></td>
+      <td><a href="{{url_for('displayCategory', category_id=category.id)}}">View</a></td>
+      <td><a href="{{url_for('editCategory', category_id=category.id)}}">Edit</a></td>
+      <td><a href="{{url_for('delCategory', category_id=category.id)}}">Delete</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

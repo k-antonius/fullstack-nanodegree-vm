@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Home</title>
+  </head>
+  <body>
+    <div id="main_title"><h1>Your Kitchen Pantry</h1></div>
+    <div id="main_title_nav_bar">
+      <tr>
+        <td><a href="{{url_for('home')}}">Home</a></td>
+        <td><a href="{{url_for('addCategory')}}">Add Category</a></td>
+      </tr>
+    </div>
+    {% block content %}
+    {% endblock %}
+  </body>
+</html>

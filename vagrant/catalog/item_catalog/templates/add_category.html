@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<table>
+  <tr>
+    <td>
+      <form method="post">
+        <h2>Type the new cateogry name:</h2>
+        <input name="new_category_name" type="text"></input>
+        <input type="submit"></input>
+      </form>
+    </td>
+  </tr>
+  <tr>
+    <td>{{form_error}}</td>
+  </tr>
+  <tr>
+    <td><a href="{{url_for('home')}}">Cancel Add</a></td>
+  </tr>
+</table>
+{% endblock %}
