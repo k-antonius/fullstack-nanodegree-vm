@@ -108,7 +108,7 @@ def addCategory():
         name = request.form['new_category_name']
         if name:
             session = getSession()
-            duplicate = session.query(Category).filter_by(name=name).one()
+            duplicate = session.query(Category).filter_by(name=name).first()
             if duplicate:
                 return render_template("add_category.html", 
                                        form_error="That category already" \
