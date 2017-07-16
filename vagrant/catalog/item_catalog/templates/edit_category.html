@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+
+<form method="post">
+  <table>
+    <tr>
+      <td>Enter a new name for the <b>{{category.name}}</b> category below:</td>
+    </tr>
+    <tr>
+      <td>
+        <input type="text" name="updated_name" placeholder="{{category.name}}">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <button type="submit">Submit</button>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="{{url_for('home')}}">Cancel edit</a>
+      </td>
+    </tr>
+    <tr>
+      <td>{{form_error}}</td>
+    </tr>
+  </table>
+</form>
+
+{% endblock %}
