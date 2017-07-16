@@ -31,6 +31,12 @@ EDIT_ITEM = ITEM + EDIT
 DEL_ITEM = ITEM + DEL
 ADD_ITEM = CATEGORY + 'item/' + ADD
 
+# templates
+CAT_OVERVIEW = "category_overview.html"
+CAT_ADD = "add_category.html"
+CAT_DEL = "del_category.html"
+CAT_EDIT = "edit_category.html"
+
 # SQL Alchemy Globals
 engine = create_engine('sqlite:///item_catalog.db')
 Base.metadata.bind = engine
@@ -70,7 +76,7 @@ def home():
     '''
     session = getSession()
     all_categories = session.query(Category).order_by(Category.name).all()
-    return render_template("category_overview.html", categories=all_categories)
+    return render_template(CAT_OVERVIEW, categories=all_categories)
 
 
 @app.route(CATEGORY)
@@ -92,11 +98,11 @@ def editCategory(category_id):
             return redirect(url_for("home"))
         else:
             error = "You must type a new category name."
-            return render_template("edit_category.html",
+            return render_template(CAT_EDIT,
                                    category=thisCategory,
                                    form_error=error)
     else:
-        return render_template("edit_category.html", category=thisCategory)
+        return render_template(CAT_EDIT, category=thisCategory)
 
 
 @app.route(DEL_CATEGORY, methods=['GET', 'POST'])
@@ -109,7 +115,7 @@ def delCategory(category_id):
         session.delete(thisCategory)
         return redirect(url_for('home'))
     else:
-        return render_template("del_category.html", items=[], 
+        return render_template(CAT_DEL, items=[], 
                                category=thisCategory)
 
 
@@ -123,7 +129,7 @@ def addCategory():
             session = getSession()
             duplicate = session.query(Category).filter_by(name=name).first()
             if duplicate:
-                return render_template("add_category.html", 
+                return render_template(CAT_ADD, 
                                        form_error="That category already" \
                                        + " exists.")
             newCategory = Category(name=name)
@@ -131,10 +137,10 @@ def addCategory():
             session.commit()
             return redirect(url_for('home'))
         else:
-            return render_template("add_category.html", 
+            return render_template(CAT_ADD, 
                                    form_error="The name can't be blank!")
     else:
-        return render_template("add_category.html")
+        return render_template(CAT_ADD)
 
 
 @app.route(ITEM)
