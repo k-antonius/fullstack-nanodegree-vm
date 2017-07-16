@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div>
+{% if not items %}
+  There are no items in the <b>{{category.name}}</b> category to display yet. Add some!
+{% endif %}
+</div>
+<div>
+  <table>
+    <tr>
+      <td><a href="{{url_for('addItem', category_id=category.id)}}">Add an item</a></td>
+    {% for item in items %}
+    <tr>
+      <td><h4>{{item.name}}</h4></td>
+      <td><a href="{{url_for('displayItem', category_id=category.id, item_id=item.id)}}">View</a></td>
+      <td><a href="{{url_for('editItem', category_id=category.id, item_id=item.id)}}">Edit</a></td>
+      <td><a href="{{url_for('delItem', category_id=category.id, item_id=item.id)}}">Delete</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}
