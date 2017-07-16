@@ -42,6 +42,7 @@ CAT_EDIT = "edit_category.html"
 
 # item
 ITEM_ADD = "add_item.html"
+ITEM_DISP = "display_item.html"
 
 # SQL Alchemy Globals
 engine = create_engine('sqlite:///item_catalog.db')
@@ -156,7 +157,10 @@ def addCategory():
 def displayItem(category_id, item_id):
     '''Display an item.
     '''
-    return 'individual item page.'
+    session = getSession()
+    thisCategory = session.query(Category).filter_by(id=category_id).one()
+    thisItem = session.query(Item).filter_by(id=item_id).one()
+    return render_template(ITEM_DISP, category=thisCategory, item=thisItem)
 
 
 @app.route(DEL_ITEM)
