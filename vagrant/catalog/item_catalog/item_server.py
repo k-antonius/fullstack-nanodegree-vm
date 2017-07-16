@@ -87,11 +87,18 @@ def editCategory(category_id):
     return 'edit a category.'
 
 
-@app.route(DEL_CATEGORY)
-def delCategory(cateogry_id):
+@app.route(DEL_CATEGORY, methods=['GET', 'POST'])
+def delCategory(category_id):
     '''Delete a category.
     '''
-    return 'delete a category.'
+    session = getSession()
+    thisCategory = session.query(Category).filter_by(id=category_id).one()
+    if request.method == 'POST' and request.form['confirm_del']:
+        session.delete(thisCategory)
+        session.commit()
+        return redirect(url_for('home'))
+    else:
+        return render_template("del_category.html", items=[], category=thisCategory)
 
 
 @app.route(ADD_CATEGORY, methods=['GET', 'POST'])
