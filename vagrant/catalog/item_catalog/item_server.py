@@ -89,7 +89,10 @@ def home():
 def displayCategory(category_id):
     '''Display individual category page.
     '''
-    return 'This is an individual category page.'
+    session = getSession()
+    thisCategory = session.query(Category).filter_by(id=category_id).one()
+    allItems = session.query(Item).filter(Item.category_id==category_id).all()
+    return render_template(CAT_DISP, category=thisCategory, items=allItems)
 
 
 @app.route(EDIT_CATEGORY, methods=['GET', 'POST'])
