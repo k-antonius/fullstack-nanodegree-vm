@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+
+<table>
+  <tr>
+    <td><h3>Type information about your new item:</h3></td>
+  <tr>
+    <td>
+      <table>
+        <form method="post">
+        <tr>
+          <td>Name:</td>
+          <td><input name="new_item_name" type="text"></input></td>
+          <td>{{name_error}}</td>
+        </tr>
+        <tr>
+          <td>Quantity:</td>
+          <td><input name="quantity" type="text"></input></td>
+          <td>{{quantity_error}}</td>
+        </tr>
+        <tr>
+          <td>Price:</td>
+          <td><input name="price" type="text"></input></td>
+          <td>{{price_error}}</td>
+        </tr>
+        <td>Description:</td>
+        <td><textarea name="description" rows=5></textarea></td>
+        <td>{{description_error}}</td>
+      </tr>
+      <tr>
+        <td><input type="submit"></input></td>
+      </tr>
+      </form>
+    </table>
+  <tr>
+    <td><a href="{{url_for('home')}}">Cancel Add</a></td>
+  </tr>
+
+</table>
+{% endblock %}
