@@ -109,7 +109,8 @@ def delCategory(category_id):
         session.delete(thisCategory)
         return redirect(url_for('home'))
     else:
-        return render_template("del_category.html", items=[], category=thisCategory)
+        return render_template("del_category.html", items=[], 
+                               category=thisCategory)
 
 
 @app.route(ADD_CATEGORY, methods=['GET', 'POST'])
