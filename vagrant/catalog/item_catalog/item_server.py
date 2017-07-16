@@ -80,11 +80,23 @@ def displayCategory(category_id):
     return 'This is an individual category page.'
 
 
-@app.route(EDIT_CATEGORY)
+@app.route(EDIT_CATEGORY, methods=['GET', 'POST'])
 def editCategory(category_id):
     '''Edit a category entry.
     '''
-    return 'edit a category.'
+    session = getSession()
+    thisCategory = session.query(Category).filter_by(id=category_id).one()
+    if request.method == "POST":
+        if request.form["updated_name"]:
+            thisCategory.name = request.form["updated_name"]
+            return redirect(url_for("home"))
+        else:
+            error = "You must type a new category name."
+            return render_template("edit_category.html",
+                                   category=thisCategory,
+                                   form_error=error)
+    else:
+        return render_template("edit_category.html", category=thisCategory)
 
 
 @app.route(DEL_CATEGORY, methods=['GET', 'POST'])
