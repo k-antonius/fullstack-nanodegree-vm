@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+<table>
+  <tr>
+    <td><h3>Category: {{category.name}}</h3></td>
+  </tr>
+  <tr>
+    <td><h4>Item type: {{item.name}}</h4></td>
+  </tr>
+  <tr>
+    <td>
+      <table>
+        <tr>
+          <td>Name: {{item.name}}</td>
+        </tr>
+        <tr>
+          <td>Quantity: {{item.quantity}}</td>
+        </tr>
+        <tr>
+          <td>Price: ${{item.price}}</td>
+        </tr>
+        <tr>
+        <td>Description: {{item.description}}</td>
+      </tr>
+    </table>
+  </tr>
+  <tr>
+    <td><a href="{{url_for('editItem', category_id=category.id, item_id=item.id)}}">Edit this item</a></td>
+    <td><a href="{{url_for('delItem', category_id=category.id, item_id=item.id)}}">Delete this item</a></td>
+    <td><a href="{{url_for('displayCategory', category_id=category.id)}}">Back to category display</a></td>
+  </tr>
+
+</table>
+{% endblock %}
