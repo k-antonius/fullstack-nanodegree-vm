@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+
+<table>
+  <tr>
+    <td>Are you sure you want to delete the <b>{{category.name}}</b> category?</td>
+  </tr>
+  <tr>
+    <td>
+      <table>
+        <tr>
+          <td>
+            <form method = "post">
+              <button name="confirm_del" value=category.id type="submit">Yes</button>
+            </form>
+          </td>
+          <td>
+            <form method="get" action="{{url_for('displayCategory', category_id=category.id)}}">
+              <button name="cancel_del" type="submit">No</button>
+            </form>
+          </td>
+        </tr>
+      </table>
+    </td>
+  <tr>
+    <td>If you choose to delete this category, the following items will also be deleted:</td>
+  </tr>
+  <tr>
+  {% if not items %}
+    <td>This category has no items, so don't worry about it.</td>
+  </tr>
+  {% endif %}
+  {% for item in items %}
+    <tr><td>{{item.name}}</td></tr>
+  {% endfor %}
+</table>
+
+{% endblock %}
