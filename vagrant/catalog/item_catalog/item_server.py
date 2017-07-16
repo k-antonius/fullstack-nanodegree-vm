@@ -32,10 +32,16 @@ DEL_ITEM = ITEM + DEL
 ADD_ITEM = CATEGORY + 'item/' + ADD
 
 # templates
+
+# category
 CAT_OVERVIEW = "category_overview.html"
+CAT_DISP = "display_category.html"
 CAT_ADD = "add_category.html"
 CAT_DEL = "del_category.html"
 CAT_EDIT = "edit_category.html"
+
+# item
+ITEM_ADD = "add_item.html"
 
 # SQL Alchemy Globals
 engine = create_engine('sqlite:///item_catalog.db')
@@ -158,17 +164,31 @@ def delItem(category_id, item_id):
 
 
 @app.route(EDIT_ITEM)
-def ediItem(level_1_id, level_2_id):
+def editItem(level_1_id, level_2_id):
     '''Edit an item.
     '''
     return 'edit an item'
 
 
-@app.route(ADD_ITEM)
-def addItem(level_1_id, level_2_id):
+@app.route(ADD_ITEM, methods=['GET', 'POST'])
+def addItem(category_id):
     '''Add an item.
     '''
-    return 'add an item'
+    if request.method == 'POST':
+        if request.form["new_item_name"]:
+            session = getSession()
+            newItem = Item(name=request.form["new_item_name"],
+                           quantity=request.form["quantity"],
+                           price=request.form["price"],
+                           description=request.form["description"],
+                           category_id=category_id)
+            session.add(newItem)
+            return redirect(url_for("displayCategory", category_id=category_id))
+        else:
+            return render_template(ITEM_ADD, category=category_id,
+                                   name_error="A name is required.")
+    else:
+        return render_template(ITEM_ADD, category=category_id)
 
 
 @app.route(SUCCESS)
