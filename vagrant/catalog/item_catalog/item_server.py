@@ -43,6 +43,7 @@ CAT_EDIT = "edit_category.html"
 # item
 ITEM_ADD = "add_item.html"
 ITEM_DISP = "display_item.html"
+ITEM_DEL = "del_item.html"
 
 # SQL Alchemy Globals
 engine = create_engine('sqlite:///item_catalog.db')
@@ -173,11 +174,18 @@ def displayItem(category_id, item_id):
     return render_template(ITEM_DISP, category=thisCategory, item=thisItem)
 
 
-@app.route(DEL_ITEM)
+@app.route(DEL_ITEM, methods = ['GET', 'POST'])
 def delItem(category_id, item_id):
     '''Delete an item.
     '''
-    return 'delete an item'
+    session = getSession()
+    thisCategory = getDBObject(session, Category, category_id)
+    thisItem = getDBObject(session, Item, item_id)
+    if request.method == 'POST' and request.form['confirm_del']:
+        session.delete(thisItem)
+        return redirect(url_for('displayCategory', category_id=category_id))
+    else:
+        return render_template(ITEM_DEL, category=thisCategory, item=thisItem)
 
 
 @app.route(EDIT_ITEM)
