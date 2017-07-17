@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+
+<table>
+  <tr>
+    <td>Are you sure you want to delete the <b>{{item.name}}</b> item from the <b>{{category.name}}</b> category?</td>
+  </tr>
+  <tr>
+    <td>
+      <table>
+        <tr>
+          <td>
+            <form method = "post">
+              <button name="confirm_del" value={{item.id}} type="submit">Yes</button>
+            </form>
+          </td>
+          <td>
+            <form method="get" action="{{url_for('displayCategory', category_id=category.id)}}">
+              <button name="cancel_del" type="submit">No</button>
+            </form>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+{% endblock %}
