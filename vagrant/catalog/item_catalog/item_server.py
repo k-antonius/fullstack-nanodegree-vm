@@ -3,7 +3,7 @@ Created on Jul 8, 2017
 
 @author: kennethalamantia
 '''
-from flask import Flask, url_for, render_template, g, request, redirect
+from flask import Flask, url_for, render_template, g, request, redirect, abort
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from catalog_database_setup import Base, Category, Item
@@ -76,6 +76,17 @@ def teardown_session(exception):
             finally:
                 session.close()
 
+# general helper functions
+def getDBObject(session, objClass, objID):
+    '''Returns an ORM object.
+    @param session: SQLAlchemy session instance
+    @param objClass: ORM table class
+    @param objID: ORM row object
+    '''
+    try:
+        return session.query(objClass).filter_by(id=objID).one()
+    except:
+        abort(404)
 
 @app.route(HOME)
 def home():
