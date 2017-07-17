@@ -144,7 +144,6 @@ def addCategory():
                                        + " exists.")
             newCategory = Category(name=name)
             session.add(newCategory)
-            session.commit()
             return redirect(url_for('home'))
         else:
             return render_template(CAT_ADD, 
