@@ -3,7 +3,8 @@ Created on Jul 8, 2017
 
 @author: kennethalamantia
 '''
-from flask import Flask, url_for, render_template, g, request, redirect, abort
+from flask import Flask, url_for, render_template, g, request, redirect, \
+abort, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from catalog_database_setup import Base, Category, Item
@@ -20,6 +21,7 @@ ADD = 'add/'
 HOME = '/'
 SUCCESS = HOME + 'success/'
 ERROR = HOME + 'error/'
+JSON = 'json/'
 
 CATEGORY = '/category/<int:category_id>/'
 EDIT_CATEGORY = CATEGORY + EDIT
@@ -30,6 +32,10 @@ ITEM = CATEGORY + 'item/<int:item_id>/'
 EDIT_ITEM = ITEM + EDIT
 DEL_ITEM = ITEM + DEL
 ADD_ITEM = CATEGORY + 'item/' + ADD
+
+ALL_CATEGORIES_JSON = HOME + JSON
+CATEGORY_JSON = CATEGORY + JSON
+ITEM_JSON = ITEM + JSON
 
 # templates
 
@@ -44,6 +50,7 @@ CAT_EDIT = "edit_category.html"
 ITEM_ADD = "add_item.html"
 ITEM_DISP = "display_item.html"
 ITEM_DEL = "del_item.html"
+ITEM_EDIT = "edit_item.html"
 
 # SQL Alchemy Globals
 engine = create_engine('sqlite:///item_catalog.db')
@@ -97,6 +104,14 @@ def home():
     all_categories = session.query(Category).order_by(Category.name).all()
     return render_template(CAT_OVERVIEW, categories=all_categories)
 
+@app.route(ALL_CATEGORIES_JSON)
+def getCategoriesJSON():
+    '''Provides a JSON representation of the current categories in the DB.
+    '''
+    session = getSession()
+    all_categories = session.query(Category).order_by(Category.name).all()
+    return jsonify(all_categories=[category.serialize for category
+                                   in all_categories])
 
 @app.route(CATEGORY)
 def displayCategory(category_id):
@@ -106,6 +121,15 @@ def displayCategory(category_id):
     thisCategory = session.query(Category).filter_by(id=category_id).one()
     allItems = session.query(Item).filter(Item.category_id==category_id).all()
     return render_template(CAT_DISP, category=thisCategory, items=allItems)
+
+@app.route(CATEGORY_JSON)
+def getCategoryJSON(category_id):
+    '''Return JSON for individual category.
+    '''
+    session = getSession()
+    allItems = session.query(Item).filter(Item.category_id==category_id).all()
+    return jsonify(all_items=[item.serialize for item in allItems])
+    
 
 
 @app.route(EDIT_CATEGORY, methods=['GET', 'POST'])
@@ -172,6 +196,16 @@ def displayItem(category_id, item_id):
     thisCategory = session.query(Category).filter_by(id=category_id).one()
     thisItem = session.query(Item).filter_by(id=item_id).one()
     return render_template(ITEM_DISP, category=thisCategory, item=thisItem)
+
+
+@app.route(ITEM_JSON)
+def getItemJSON(category_id, item_id):
+    '''Return JSON for individual item.
+    '''
+    session = getSession()
+    thisItem = session.query(Item).filter_by(id=item_id).one()
+    return jsonify(item_info=thisItem.serialize)
+    
 
 
 @app.route(DEL_ITEM, methods = ['GET', 'POST'])
