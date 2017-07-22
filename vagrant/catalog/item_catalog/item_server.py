@@ -188,11 +188,27 @@ def delItem(category_id, item_id):
         return render_template(ITEM_DEL, category=thisCategory, item=thisItem)
 
 
-@app.route(EDIT_ITEM)
-def editItem(level_1_id, level_2_id):
+@app.route(EDIT_ITEM, methods=['GET', 'POST'])
+def editItem(category_id, item_id):
     '''Edit an item.
     '''
-    return 'edit an item'
+    session = getSession()
+    thisCategory = getDBObject(session, Category, category_id)
+    thisItem = getDBObject(session, Item, item_id)
+    if request.method == 'POST':
+        if request.form['item_name']:
+            thisItem.name = request.form['item_name']
+            thisItem.quantity = request.form['quantity']
+            thisItem.price = request.form['price']
+            thisItem.description = request.form['description']
+            return redirect(url_for('displayItem', category_id=category_id, 
+                             item_id=item_id))
+        else:
+            return render_template(ITEM_EDIT, category=thisCategory, 
+                                   item=thisItem,
+                                   name_error="You must provide a name.")
+    else:
+        return render_template(ITEM_EDIT, category=thisCategory, item=thisItem)
 
 
 @app.route(ADD_ITEM, methods=['GET', 'POST'])

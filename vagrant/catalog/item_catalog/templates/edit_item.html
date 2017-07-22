@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+
+<table>
+  <tr>
+    <td><h3>Edit the information about your item:</h3></td>
+  </tr>
+  <tr>
+    <td>
+      <table>
+        <form method="post">
+        <tr>
+          <td>Name:</td>
+          <td><input name="item_name" type="text" placeholder="{{item.name}}"></input></td>
+          <td>{{name_error}}</td>
+        </tr>
+        <tr>
+          <td>Quantity:</td>
+          <td><input name="quantity" type="text" placeholder="{{item.quantity}}"></input></td>
+          <td>{{quantity_error}}</td>
+        </tr>
+        <tr>
+          <td>Price:</td>
+          <td><input name="price" type="text" placeholder="{{item.price}}"></input></td>
+          <td>{{price_error}}</td>
+        </tr>
+        <tr>
+        <td>Description:</td>
+        <td><textarea name="description" rows=5 placeholder="{{item.description}}"></textarea></td>
+        <td>{{description_error}}</td>
+      </tr>
+      <tr>
+        <td><input type="submit"></input></td>
+      </tr>
+      </form>
+    </table>
+  </tr>
+  <tr>
+    <td><a href="{{url_for('displayItem', category_id=category.id, item_id=item.id)}}">Cancel edit</a></td>
+  </tr>
+
+</table>
+{% endblock %}
