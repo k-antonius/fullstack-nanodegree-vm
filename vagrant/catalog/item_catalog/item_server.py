@@ -3,12 +3,26 @@ Created on Jul 8, 2017
 
 @author: kennethalamantia
 '''
+import random, string
 from flask import Flask, url_for, render_template, g, request, redirect, \
-abort, jsonify
+abort, jsonify, session as flask_session, make_response
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from catalog_database_setup import Base, Category, Item
+
+from oauth2client.client import flow_from_clientsecrets
+from oauth2client.client import FlowExchangeError
+import httplib2
+import json
+import requests
+
 app = Flask(__name__)
+
+app.secret_key = 'development_key' # make better and move to other module
+CLIENT_ID = json.loads(
+    open('client_secrets.json', 'r').read())['web']['client_id']
+APPLICATION_NAME = 'Web client 1'
+
 
 # Routes
 
@@ -22,6 +36,9 @@ HOME = '/'
 SUCCESS = HOME + 'success/'
 ERROR = HOME + 'error/'
 JSON = 'json/'
+LOGIN = HOME + 'login/'
+LOGOUT = HOME + 'logout/'
+GCONNECT = '/gconnect'
 
 CATEGORY = '/category/<int:category_id>/'
 EDIT_CATEGORY = CATEGORY + EDIT
@@ -38,6 +55,10 @@ CATEGORY_JSON = CATEGORY + JSON
 ITEM_JSON = ITEM + JSON
 
 # templates
+
+# general
+LOGIN_TEMPLATE = "login.html"
+LOGOUT_TEMPALTE = "logout.html"
 
 # category
 CAT_OVERVIEW = "category_overview.html"
@@ -279,6 +300,96 @@ def errorUpdate():
     '''
     return 'Error. Operation unsuccessful.'
 
+@app.route(LOGIN)
+def login():
+    state = ''.join(random.choice(string.ascii_uppercase + 
+                                  string.ascii_lowercase + 
+                                  string.digits)
+                    for dummy_idx in xrange(32))
+    flask_session['state'] = state
+    return render_template(LOGIN_TEMPLATE, STATE=state)
+
+
+def buildJSONResponse(msg, response_code):
+    '''Helper method to build a json response.
+    @param msg: object to serialize to json string
+    @param response_code: http response code
+    '''
+    response = make_response(json.dumps(msg), response_code)
+    response.headers['Content-Type'] = 'application/json'
+    return response
+
+@app.route(GCONNECT, methods=['POST'])
+def gconnect():
+    '''Retrieve OAuth2 state token from client request and obtain 
+    authorization code from Google.
+    '''
+    if request.args.get('state') != flask_session['state']:
+        return buildJSONResponse('Invalid state token for gConnect.', 401)
+    else:
+        # create credentials object
+        code = request.data
+        try:
+            oauth_flow = flow_from_clientsecrets('client_secrets.json',
+                                                 scope='')
+            oauth_flow.redirect_uri = 'postmessage'
+            credentials = oauth_flow.step2_exchange(code)
+        except FlowExchangeError:
+            return buildJSONResponse('Failed to create credentials object' + \
+                                      ' code.', 401)
+        # validate access token
+        access_token = credentials.access_token
+        url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token' + \
+               '=%s' % access_token)
+        http_client_instance = httplib2.Http()
+        result = json.loads(http_client_instance.request(url, 'GET')[1])
+        if result.get('error') is not None:
+            return buildJSONResponse(result.get('error'), 500)
+        # Does token match this user?
+        gplus_id = credentials.id_token['sub']
+        if result['user_id'] != gplus_id:
+            return buildJSONResponse('Token does not match user.', 401)
+        # Does token match this application?
+        elif result['issued_to'] != CLIENT_ID:
+            return buildJSONResponse('Token does not match application', 401)
+        stored_access_token = flask_session.get('access_token')
+        stored_gplus_id = flask_session.get('gplus_id')
+        if (stored_access_token is not None) and (gplus_id == stored_gplus_id):
+            return buildJSONResponse('Current user is already logged in', 200)
+        
+        # store credentials in session
+        flask_session['access_token'] = credentials.access_token
+        flask_session['gplus_id'] = gplus_id
+        
+        # get user info from Google
+        userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
+        params = {'access_token' : credentials.access_token, 'alt' : 'json'}
+        answer = requests.get(userinfo_url, params=params)
+        
+        data = answer.json()
+        
+        # set flask session keys
+        flask_session['username'] = data['name']
+        flask_session['picture'] = data['picture']
+        flask_session['email'] = data['email']
+        
+        return render_template("welcome.html",
+                               user=flask_session['username'],
+                               picture=flask_session['picture'])
+        
+        
+@app.route('/gdisconnect/', methods=['POST'])
+def gdisconnect():
+    access_token = flask_session['access_token']
+    print 'In fun gdisconnect, access token is %s', access_token
+    print 'Username is'
+    print flask_session['username']
+    
+        
+        
+        
+        
+        
 
 if __name__ == '__main__':
     app.debug = True
