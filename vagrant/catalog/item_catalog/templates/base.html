@@ -11,6 +11,11 @@
       <tr>
         <td><a href="{{url_for('home')}}">Home</a></td>
         <td><a href="{{url_for('addCategory')}}">Add Category</a></td>
+        <td>
+          <form method="post" action="{{url_for('gdisconnect')}}">
+            <button>Logout</button>
+          </form>
+        </td>
       </tr>
     </div>
     {% block content %}

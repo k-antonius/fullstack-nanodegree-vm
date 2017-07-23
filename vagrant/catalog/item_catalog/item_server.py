@@ -117,7 +117,7 @@ def getDBObject(session, objClass, objID):
     except:
         abort(404)
 
-@app.route(HOME)
+@app.route(HOME, methods=['GET', 'POST'])
 def home():
     '''Display the home page.
     '''
@@ -334,6 +334,7 @@ def gconnect():
                                                  scope='')
             oauth_flow.redirect_uri = 'postmessage'
             credentials = oauth_flow.step2_exchange(code)
+            flask_session['credentials'] = credentials.to_json()
         except FlowExchangeError:
             return buildJSONResponse('Failed to create credentials object' + \
                                       ' code.', 401)
@@ -355,7 +356,8 @@ def gconnect():
         stored_access_token = flask_session.get('access_token')
         stored_gplus_id = flask_session.get('gplus_id')
         if (stored_access_token is not None) and (gplus_id == stored_gplus_id):
-            return buildJSONResponse('Current user is already logged in', 200)
+            return buildJSONResponse('Current user is already logged in: %s' \
+                                     % flask_session['username'], 200)
         
         # store credentials in session
         flask_session['access_token'] = credentials.access_token
@@ -381,16 +383,53 @@ def gconnect():
 @app.route('/gdisconnect/', methods=['POST'])
 def gdisconnect():
     access_token = flask_session['access_token']
-    print 'In fun gdisconnect, access token is %s', access_token
+    print 'In fun gdisconnect, access token is %s' % access_token
     print 'Username is'
     print flask_session['username']
+    if access_token is None:
+        print 'No access token.'
+        return buildJSONResponse('Current user not connected.', 401)
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' \
+    % flask_session['access_token']
+    http_client_instance = httplib2.Http()
+    result = http_client_instance.request(url, 'GET')[0]
+    print 'restult is: %s' % result
+    if result['status'] == '200':
+        del flask_session['access_token']
+        del flask_session['gplus_id']
+        del flask_session['username']
+        del flask_session['email']
+        del flask_session['picture']
+        return buildJSONResponse('Successfully disconnected.', 200)
+    else:
+        print 'failed to revoke token'
+        return buildJSONResponse('failed to revoke token', 400)
     
-        
-        
-        
-        
-        
+           
 
 if __name__ == '__main__':
     app.debug = True
     app.run(port=5001)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
