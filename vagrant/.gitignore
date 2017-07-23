@@ -1,3 +1,10 @@
-__pycache__
+/__pycache__
 *.pyc
 .vagrant
+/tournament
+/forum
+/catalog/item_catalog/client_secrets.json
+/catalog/item_catalog/__init__.py
+/catalog/.pydevproject
+/catalog/.project
+Vagrantfile
