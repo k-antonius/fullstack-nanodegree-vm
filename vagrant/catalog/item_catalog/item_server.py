@@ -79,16 +79,6 @@ Base.metadata.bind = engine
 sessionFactory = sessionmaker(bind=engine)
 
 # context functions
-def getSession():
-    '''Creates a new SQL Alchemy session from the global sessionmaker
-    factory object, if none exists.
-    @return: SQLAlchemy Session, new or pre-existing for this app context.
-    '''
-    session = getattr(g, '_database', None)
-    if session is None:
-        session = g._database = sessionFactory()
-    return session
-
 
 @app.teardown_appcontext
 def teardown_session(exception):
@@ -105,32 +95,90 @@ def teardown_session(exception):
             finally:
                 session.close()
 
-# general helper functions
-def getDBObject(session, objClass, objID):
-    '''Returns an ORM object.
-    @param session: SQLAlchemy session instance
-    @param objClass: ORM table class
-    @param objID: ORM row object
+class DBAccessor(object):
+    '''Provides access to the database as necessary.
+    Serves as a mid-layer between the ORM and view functions. 
+    ''' 
+    
+    def __init__(self):
+        self.session = self._getSession()
+        
+    def _getSession(self):
+        '''Creates a new SQL Alchemy session from the global sessionmaker
+        factory object, if none exists.
+        @return: SQLAlchemy Session, new or pre-existing for this app context.
+        '''
+        session = getattr(g, '_database', None)
+        if session is None:
+            session = g._database = sessionFactory()
+        return session
+    
+    def getDBObject(self, objClass, objID):
+        '''Returns an ORM object.
+        @param session: SQLAlchemy session instance
+        @param objClass: ORM table class
+        @param objID: ORM row object
+        '''
+        try:
+            return self.session.query(objClass).filter_by(id=objID).one()
+        except:
+            abort(404)
+            
+    def getCategoryByName(self, name):
+        '''No exception is thrown if this fails.
+        '''
+        return self.session.query(Category).filter_by(name=name).first()
+    
+    def getAllCategories(self):
+        '''Returns a list of all cateogies as ORM objects.
+        @param session: SQL Alchemy session instance.
+        '''
+        try:
+            return self.session.query(Category).order_by(Category.name).all()
+        except:
+            abort(404)
+    
+    
+    def getAllItems(self, category_id):
+        '''Returns a list of all items in a given category as a list of 
+        ORM objects.
+        @param session: SQL Alchemy session instance.
+        @param category_id: id of the category to retrieve items from
+        '''
+        try:
+            return self.session.query(Item).filter(Item.category_id==category_id).all()
+        except:
+            abort(404)
+            
+    def getUser(self):
+        pass
+    
+    def adduser(self):
+        pass
+
+def loggedIn(fun):
+    '''Checks if user is logged in. If not returns them to the home page
+    with a flashed message.
     '''
-    try:
-        return session.query(objClass).filter_by(id=objID).one()
-    except:
-        abort(404)
+    @wraps
+    def wrapper(*args, **kwargs):
+        pass
+        
 
 @app.route(HOME, methods=['GET', 'POST'])
 def home():
     '''Display the home page.
     '''
-    session = getSession()
-    all_categories = session.query(Category).order_by(Category.name).all()
+    db = DBAccessor()
+    all_categories = db.getAllCategories()
     return render_template(CAT_OVERVIEW, categories=all_categories)
 
 @app.route(ALL_CATEGORIES_JSON)
 def getCategoriesJSON():
     '''Provides a JSON representation of the current categories in the DB.
     '''
-    session = getSession()
-    all_categories = session.query(Category).order_by(Category.name).all()
+    db = DBAccessor()
+    all_categories = db.getAllCategories()
     return jsonify(all_categories=[category.serialize for category
                                    in all_categories])
 
@@ -138,27 +186,26 @@ def getCategoriesJSON():
 def displayCategory(category_id):
     '''Display individual category page.
     '''
-    session = getSession()
-    thisCategory = session.query(Category).filter_by(id=category_id).one()
-    allItems = session.query(Item).filter(Item.category_id==category_id).all()
+    db = DBAccessor()
+    thisCategory = db.getDBObject(Category, category_id)
+    allItems = db.getAllItems(category_id)
     return render_template(CAT_DISP, category=thisCategory, items=allItems)
 
 @app.route(CATEGORY_JSON)
 def getCategoryJSON(category_id):
     '''Return JSON for individual category.
     '''
-    session = getSession()
-    allItems = session.query(Item).filter(Item.category_id==category_id).all()
+    db = DBAccessor()
+    allItems = db.getAllItems(category_id)
     return jsonify(all_items=[item.serialize for item in allItems])
     
-
 
 @app.route(EDIT_CATEGORY, methods=['GET', 'POST'])
 def editCategory(category_id):
     '''Edit a category entry.
     '''
-    session = getSession()
-    thisCategory = session.query(Category).filter_by(id=category_id).one()
+    db = DBAccessor()
+    thisCategory = db.getDBObject(Category, category_id)
     if request.method == "POST":
         if request.form["updated_name"]:
             thisCategory.name = request.form["updated_name"]
@@ -176,31 +223,34 @@ def editCategory(category_id):
 def delCategory(category_id):
     '''Delete a category.
     '''
-    session = getSession()
-    thisCategory = session.query(Category).filter_by(id=category_id).one()
+    # display items to be deleted.
+    db = DBAccessor()
+    thisCategory = db.getDBObject(Category, category_id)
+    allItems = db.getAllItems(category_id)
     if request.method == 'POST' and request.form['confirm_del']:
-        session.delete(thisCategory)
+        db.session.delete(thisCategory)
         return redirect(url_for('home'))
     else:
-        return render_template(CAT_DEL, items=[], 
-                               category=thisCategory)
+        return render_template(CAT_DEL, 
+                               category=thisCategory,
+                               items=allItems)
 
 
 @app.route(ADD_CATEGORY, methods=['GET', 'POST'])
 def addCategory():
     '''Add a category.
     '''
+    db = DBAccessor()
     if request.method == 'POST':
         name = request.form['new_category_name']
         if name:
-            session = getSession()
-            duplicate = session.query(Category).filter_by(name=name).first()
+            duplicate = db.getCategoryByName(name)
             if duplicate:
                 return render_template(CAT_ADD, 
                                        form_error="That category already" \
                                        + " exists.")
             newCategory = Category(name=name)
-            session.add(newCategory)
+            db.session.add(newCategory)
             return redirect(url_for('home'))
         else:
             return render_template(CAT_ADD, 
@@ -213,9 +263,9 @@ def addCategory():
 def displayItem(category_id, item_id):
     '''Display an item.
     '''
-    session = getSession()
-    thisCategory = session.query(Category).filter_by(id=category_id).one()
-    thisItem = session.query(Item).filter_by(id=item_id).one()
+    db = DBAccessor()
+    thisCategory = db.getDBObject(Category, category_id)
+    thisItem = db.getDBObject(Item, item_id)
     return render_template(ITEM_DISP, category=thisCategory, item=thisItem)
 
 
@@ -223,8 +273,8 @@ def displayItem(category_id, item_id):
 def getItemJSON(category_id, item_id):
     '''Return JSON for individual item.
     '''
-    session = getSession()
-    thisItem = session.query(Item).filter_by(id=item_id).one()
+    db = DBAccessor()
+    thisItem = db.getDBObject(Item, item_id)
     return jsonify(item_info=thisItem.serialize)
     
 
@@ -233,11 +283,11 @@ def getItemJSON(category_id, item_id):
 def delItem(category_id, item_id):
     '''Delete an item.
     '''
-    session = getSession()
-    thisCategory = getDBObject(session, Category, category_id)
-    thisItem = getDBObject(session, Item, item_id)
+    db = DBAccessor()
+    thisCategory = db.getDBObject(Category, category_id)
+    thisItem = db.getDBObject(Item, item_id)
     if request.method == 'POST' and request.form['confirm_del']:
-        session.delete(thisItem)
+        db.session.delete(thisItem)
         return redirect(url_for('displayCategory', category_id=category_id))
     else:
         return render_template(ITEM_DEL, category=thisCategory, item=thisItem)
@@ -247,9 +297,9 @@ def delItem(category_id, item_id):
 def editItem(category_id, item_id):
     '''Edit an item.
     '''
-    session = getSession()
-    thisCategory = getDBObject(session, Category, category_id)
-    thisItem = getDBObject(session, Item, item_id)
+    db = DBAccessor()
+    thisCategory = db.getDBObject(Category, category_id)
+    thisItem = db.getDBObject(Item, item_id)
     if request.method == 'POST':
         if request.form['item_name']:
             thisItem.name = request.form['item_name']
@@ -272,13 +322,13 @@ def addItem(category_id):
     '''
     if request.method == 'POST':
         if request.form["new_item_name"]:
-            session = getSession()
+            db = DBAccessor()
             newItem = Item(name=request.form["new_item_name"],
                            quantity=request.form["quantity"],
                            price=request.form["price"],
                            description=request.form["description"],
                            category_id=category_id)
-            session.add(newItem)
+            db.session.add(newItem)
             return redirect(url_for("displayCategory", category_id=category_id))
         else:
             return render_template(ITEM_ADD, category=category_id,
