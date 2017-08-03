@@ -4,6 +4,7 @@ Created on Jul 8, 2017
 @author: kennethalamantia
 '''
 import random, string
+from functools import wraps
 from flask import Flask, url_for, render_template, g, request, redirect, \
 abort, jsonify, session as flask_session, make_response
 from sqlalchemy import create_engine
@@ -40,10 +41,16 @@ LOGIN = HOME + 'login/'
 LOGOUT = HOME + 'logout/'
 GCONNECT = '/gconnect'
 
-CATEGORY = '/category/<int:category_id>/'
+PANTRY = '/pantry/<int:pantry_id>/'
+EDIT_PANTRY = PANTRY + EDIT
+DEL_PANTRY = PANTRY + DEL
+ADD_PANTRY = '/pantry/' + ADD
+PANTRY_JSON = PANTRY + JSON
+
+CATEGORY = PANTRY + 'category/<int:category_id>/'
 EDIT_CATEGORY = CATEGORY + EDIT
 DEL_CATEGORY = CATEGORY + DEL
-ADD_CATEGORY = '/category/' + ADD
+ADD_CATEGORY = PANTRY + 'category/' + ADD
 
 ITEM = CATEGORY + 'item/<int:item_id>/'
 EDIT_ITEM = ITEM + EDIT
@@ -60,18 +67,24 @@ ITEM_JSON = ITEM + JSON
 LOGIN_TEMPLATE = "login.html"
 LOGOUT_TEMPALTE = "logout.html"
 
+# pantry
+P_INDEX_TMPLT = "pantry_index.html"
+P_ADD_TMPLT = "add_pantry.html"
+P_DEL_TMPLT = "del_pantry.html"
+P_EDIT_TMPLT = "edit_pantry.html"
+
 # category
-CAT_OVERVIEW = "category_overview.html"
-CAT_DISP = "display_category.html"
-CAT_ADD = "add_category.html"
-CAT_DEL = "del_category.html"
-CAT_EDIT = "edit_category.html"
+C_INDEX_TMPLT = "category_overview.html"
+C_DISP_TMPLT = "display_category.html"
+C_ADD_TMPLT = "add_category.html"
+C_DEL_TMPLT = "del_category.html"
+C_EDIT_TMPLT = "edit_category.html"
 
 # item
-ITEM_ADD = "add_item.html"
-ITEM_DISP = "display_item.html"
-ITEM_DEL = "del_item.html"
-ITEM_EDIT = "edit_item.html"
+I_ADD_TMPLT = "add_item.html"
+I_DISP_TMPLT = "display_item.html"
+I_DEL_TMPLT = "del_item.html"
+I_EDIT_TMPLT = "edit_item.html"
 
 # SQL Alchemy Globals
 engine = create_engine('sqlite:///item_catalog.db')
@@ -163,15 +176,48 @@ def loggedIn(fun):
     @wraps
     def wrapper(*args, **kwargs):
         pass
-        
+
+    
+@app.route(HOME)
+def home():
+    '''Displays the home page for users that are not logged in.
+    '''
+    pass
+
+@app.route(PANTRY)        
+def pantryIndex():
+    '''Displays all pantrys for a given user.
+    '''
+    pass
+
+
+@app.route(ADD_PANTRY)
+def addPantry():
+    '''Create a new pantry
+    '''
+    pass
+
+
+@app.route(DEL_PANTRY)
+def delPantry(pantry_id):
+    '''Delete a pantry
+    '''
+    pass
+
+
+@app.route(EDIT_PANTRY)
+def editPantry(pantry_id):
+    '''Edit a pantry.
+    '''
+    pass
 
 @app.route(HOME, methods=['GET', 'POST'])
-def home():
-    '''Display the home page.
+def categoryIndex():
+    '''Display the category index page.
     '''
     db = DBAccessor()
     all_categories = db.getAllCategories()
-    return render_template(CAT_OVERVIEW, categories=all_categories)
+    return render_template(C_INDEX_TMPLT, categories=all_categories)
 
 @app.route(ALL_CATEGORIES_JSON)
 def getCategoriesJSON():
@@ -189,7 +235,7 @@ def displayCategory(category_id):
     db = DBAccessor()
     thisCategory = db.getDBObject(Category, category_id)
     allItems = db.getAllItems(category_id)
-    return render_template(CAT_DISP, category=thisCategory, items=allItems)
+    return render_template(C_DISP_TMPLT, category=thisCategory, items=allItems)
 
 @app.route(CATEGORY_JSON)
 def getCategoryJSON(category_id):
@@ -209,14 +255,14 @@ def editCategory(category_id):
     if request.method == "POST":
         if request.form["updated_name"]:
             thisCategory.name = request.form["updated_name"]
-            return redirect(url_for("home"))
+            return redirect(url_for("categoryIndex"))
         else:
             error = "You must type a new category name."
-            return render_template(CAT_EDIT,
+            return render_template(C_EDIT_TMPLT,
                                    category=thisCategory,
                                    form_error=error)
     else:
-        return render_template(CAT_EDIT, category=thisCategory)
+        return render_template(C_EDIT_TMPLT, category=thisCategory)
 
 
 @app.route(DEL_CATEGORY, methods=['GET', 'POST'])
@@ -229,9 +275,9 @@ def delCategory(category_id):
     allItems = db.getAllItems(category_id)
     if request.method == 'POST' and request.form['confirm_del']:
         db.session.delete(thisCategory)
-        return redirect(url_for('home'))
+        return redirect(url_for('categoryIndex'))
     else:
-        return render_template(CAT_DEL, 
+        return render_template(C_DEL_TMPLT, 
                                category=thisCategory,
                                items=allItems)
 
@@ -246,17 +292,17 @@ def addCategory():
         if name:
             duplicate = db.getCategoryByName(name)
             if duplicate:
-                return render_template(CAT_ADD, 
+                return render_template(C_ADD_TMPLT, 
                                        form_error="That category already" \
                                        + " exists.")
             newCategory = Category(name=name)
             db.session.add(newCategory)
-            return redirect(url_for('home'))
+            return redirect(url_for('categoryIndex'))
         else:
-            return render_template(CAT_ADD, 
+            return render_template(C_ADD_TMPLT, 
                                    form_error="The name can't be blank!")
     else:
-        return render_template(CAT_ADD)
+        return render_template(C_ADD_TMPLT)
 
 
 @app.route(ITEM)
@@ -266,7 +312,7 @@ def displayItem(category_id, item_id):
     db = DBAccessor()
     thisCategory = db.getDBObject(Category, category_id)
     thisItem = db.getDBObject(Item, item_id)
-    return render_template(ITEM_DISP, category=thisCategory, item=thisItem)
+    return render_template(I_DISP_TMPLT, category=thisCategory, item=thisItem)
 
 
 @app.route(ITEM_JSON)
@@ -290,7 +336,7 @@ def delItem(category_id, item_id):
         db.session.delete(thisItem)
         return redirect(url_for('displayCategory', category_id=category_id))
     else:
-        return render_template(ITEM_DEL, category=thisCategory, item=thisItem)
+        return render_template(I_DEL_TMPLT, category=thisCategory, item=thisItem)
 
 
 @app.route(EDIT_ITEM, methods=['GET', 'POST'])
@@ -309,11 +355,11 @@ def editItem(category_id, item_id):
             return redirect(url_for('displayItem', category_id=category_id, 
                              item_id=item_id))
         else:
-            return render_template(ITEM_EDIT, category=thisCategory, 
+            return render_template(I_EDIT_TMPLT, category=thisCategory, 
                                    item=thisItem,
                                    name_error="You must provide a name.")
     else:
-        return render_template(ITEM_EDIT, category=thisCategory, item=thisItem)
+        return render_template(I_EDIT_TMPLT, category=thisCategory, item=thisItem)
 
 
 @app.route(ADD_ITEM, methods=['GET', 'POST'])
@@ -331,10 +377,10 @@ def addItem(category_id):
             db.session.add(newItem)
             return redirect(url_for("displayCategory", category_id=category_id))
         else:
-            return render_template(ITEM_ADD, category=category_id,
+            return render_template(I_ADD_TMPLT, category=category_id,
                                    name_error="A name is required.")
     else:
-        return render_template(ITEM_ADD, category=category_id)
+        return render_template(I_ADD_TMPLT, category=category_id)
 
 
 @app.route(SUCCESS)
@@ -424,6 +470,7 @@ def gconnect():
         flask_session['username'] = data['name']
         flask_session['picture'] = data['picture']
         flask_session['email'] = data['email']
+        # check this user's authorization status 
         
         return render_template("welcome.html",
                                user=flask_session['username'],
