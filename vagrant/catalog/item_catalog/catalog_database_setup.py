@@ -3,8 +3,7 @@ Created on Jul 9, 2017
 
 @author: kennethalamantia
 '''
-import os
-import sys
+
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -12,10 +11,19 @@ from sqlalchemy import create_engine
 
 Base = declarative_base()
 
+class User(Base):
+    __tablename__ = 'user'
+    name = Column(String(80), nullable = False)
+    id = Column(Integer, primary_key = True)
+    email = Column(String(80), nullable = False)
+    picture = Column(String(80))
+
 class Category(Base):
     __tablename__ = 'category'
     name = Column(String(80), nullable = False)
     id = Column(Integer, primary_key = True)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    User = relationship(User)
     
     @property
     def serialize(self):
@@ -35,7 +43,6 @@ class Item(Base):
     quantity = Column(Integer)
     price = Column(Integer)
     category_id = Column(Integer, ForeignKey('category.id'))
-    purchaser = Column(String(80))
     Category = relationship(Category)
     
     @property
@@ -49,7 +56,8 @@ class Item(Base):
                 'purchaser' : self.purchaser
                 }
 
+
 ### End of file  ###
 engine = create_engine('sqlite:///item_catalog.db')
-
+Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
