@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+
+<table>
+  <tr>
+    <td>Are you sure you want to delete the <b>{{pantry.name}}</b> pantry?</td>
+  </tr>
+  <tr>
+    <td>
+      <table>
+        <tr>
+          <td>
+            <form method = "post">
+              <button name="confirm_del" value={{pantry.id}} type="submit">Yes</button>
+            </form>
+          </td>
+          <td>
+            <form method="get" action="{{url_for('displayPantry', pantry_id=pantry.id)}}">
+              <button name="cancel_del" type="submit">No</button>
+            </form>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td>If you choose to delete this pantry, all the items in the following categories will also be deleted:</td>
+  </tr>
+  <tr>
+  {% if not categories %}
+    <td>This pantry has no categories, so don't worry about it.</td>
+  </tr>
+  {% endif %}
+  {% for category in categories %}
+    <tr><td>{{category.name}}</td></tr>
+  {% endfor %}
+</table>
+
+{% endblock %}

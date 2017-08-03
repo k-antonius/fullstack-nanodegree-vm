@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div>
+{% if not pantries %}
+  No food pantries to display yet. Add one!
+{% endif %}
+</div>
+<div>
+  <table>
+    {% for pantry in pantries %}
+    <tr>
+      <td><h3>{{pantry.name}}</h3></td>
+      <td><a href="{{url_for('displayPantry', pantry_id=pantry.id)}}">View</a></td>
+      <td><a href="{{url_for('editPantry', pantry_id=pantry.id)}}">Edit</a></td>
+      <td><a href="{{url_for('delPantry', pantry_id=pantry.id)}}">Delete</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}
