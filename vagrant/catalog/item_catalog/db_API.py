@@ -4,11 +4,25 @@ Created on Aug 7, 2017
 @author: kennethalamantia
 '''
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from catalog_database_setup import Base, Category, Item, Pantry, User
+
 class DBInterface(object):
     '''This class acts as an interface to either an actual database for 
     production or live testing, or a testing version that uses normal
     in memory python data structures. 
     '''
+    @classmethod
+    def makeSessionFactory(cls):
+        '''Create a SQL Alchemy session factory. This is not used in the 
+        initializer because there is no need to re-create the factory object
+        every time an instance of this class is created.
+        '''
+        engine = create_engine('sqlite:///item_catalog.db')
+        Base.metadata.bind = engine
+        return sessionmaker(bind=engine)
+    
     def __init__(self, session, testing=False):
         '''If testing is true, will use the mock database implementation, 
         otherwise uses SQL Alchemy queries. 
@@ -47,10 +61,24 @@ class DBInterface(object):
         '''
         return self.db.getUserByEmail(email)
     
-    def addObject(self, obj):
-        '''Add an object to the database.
+    def getAuthorizedPantries(self, user):
+        '''Return a list of users authorized to access a pantry
+        @param user: the accessing user.
         '''
-        self.db.createObject(obj)
+        if self.testing:
+            return self.db.getAuthorizedPantries(user)
+    
+    def addObject(self, className, *args):
+        '''Add an object to the database. 
+        @param className: the name of the class the new object is to be
+        an instance of
+        @param kwargs: keys are the fields of the class and values are the
+        data
+        '''
+        if self.testing:
+            self.db.addObject(className, *args)
+        else:
+            pass
         
     def delObject(self, obj):
         '''CRUD delete this entity from the database.
@@ -77,7 +105,7 @@ class MockDBAccessor(object):
     def getObj(self, objClass, objId):
         try:
             return filter(lambda x: x.id == objId,
-                          self.session.mock_db.get(objClass.__name__))[0]
+                          self.session.mock_db.get(objClass))[0]
         except IndexError:
             return None
             
@@ -85,7 +113,7 @@ class MockDBAccessor(object):
     def getObjByName(self, objClass, objName, objParentId):
         try:
             return filter(lambda x: x.name == objName and x.parent_id == objParentId,
-                          self.session.mock_db.get(objClass.__name__))[0]
+                          self.session.mock_db.get(objClass))[0]
         except IndexError:
             return None
     
@@ -94,13 +122,25 @@ class MockDBAccessor(object):
         the table with a given parent relationship.
         '''
         return filter(lambda x: x.parent_id == parentId, 
-                      self.session.mock_db.get(objClass.__name__))
+                      self.session.mock_db.get(objClass))
         
-    def createObject(self, obj):
+    def getAuthorizedPantries(self, user):
+        '''Return a list of pantry objects this user can access.
+        @param user: the user to check.
+        '''
+        return filter(lambda x: x.id in user.pantries, self.session.pantries)
+        
+    def addObject(self, className, *args):
         '''Create a new entry in the mock table. 
         '''
-        mockTable = self.session.mock_db.get(obj.__class__.__name__)
-        mockTable.append(obj)
+        mockTable = self.session.mock_db.get(className)
+        constructor = self.session.constructor.get(className)
+        new_id = mockTable[len(mockTable)-1].id + 1
+        argsWithId = list(args)
+        argsWithId.insert(0, new_id)
+        newObj = constructor(*argsWithId)
+        newObj.id = new_id
+        mockTable.append(newObj)
     
     def delObject(self, obj):
         '''Delete an object from the list.
@@ -125,6 +165,10 @@ class DBAccessor(object):
      
     def __init__(self, session):
         self.session = session
+        self.classes = {'User' : User,
+                        'Pantry' : Pantry,
+                        'Category' : Category,
+                        'Item' : Item}
       
     def getDBObj(self, objClass, objID):
         '''Returns an ORM object.
