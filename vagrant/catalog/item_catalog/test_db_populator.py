@@ -50,13 +50,13 @@ class MockDB(object):
     def __init__(self):
         '''Creates entities to populate the mock database.
         '''
-        self.mock_users = (User(1, 'A', 'A@aaa.com', 'A_picture', []),
-                           User(2, 'B', 'B@bbb.com', 'B_pic', []),
-                           User(3, 'C', 'C@ccc.com', 'C_pic', []))
+        self.mock_users = (User(1, 'A', 'A@aaa.com', 'A_picture', [1,2]),
+                           User(2, 'B', 'B@bbb.com', 'B_pic', [2,3]),
+                           User(3, 'C', 'C@ccc.com', 'C_pic', [3]))
         
         self.pantries = [Pantry(1, 'Pantry_A', 1),
                          Pantry(2, 'Pantry_B', 2),
-                         Pantry(3, 'Pantry_A', 3)]
+                         Pantry(3, 'Pantry_C', 3)]
         
         self.categories = [Category(1, 'vegetables', 1),
                            Category(2, 'starches', 1),
@@ -80,3 +80,8 @@ class MockDB(object):
                         'Pantry' : self.pantries,
                         'Category' : self.categories,
                         'Item' : self.items}
+        
+        self.constructor = {'User' : User,
+                            'Pantry' : Pantry,
+                            'Category' : Category,
+                            'Item' : Item}
