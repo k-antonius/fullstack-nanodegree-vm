@@ -86,6 +86,13 @@ class TestServer(unittest.TestCase):
     
     def setPostRequest(self, uri, **kwargs):
         return self.app.post(uri, data=kwargs, follow_redirects=True)
+    
+    def setSession(self, email):
+        '''Helper method to set user email cookie for session so that user is
+        logged in.
+        '''
+        with self.app.session_transaction() as sess:
+            sess['email'] = email
         
     def testPantryIndex1(self):
         '''Mock user A.
@@ -182,16 +189,28 @@ class TestServer(unittest.TestCase):
         '''Test editing the veggies category, changing to 'grub' cateogry
         for user B.
         '''
-        with self.app.session_transaction() as sess:
-            sess['email'] = 'B@bbb.com'
+        self.setSession('B@bbb.com')
+        r = self.setGetRequest('/pantry/2/category/4/edit')
+        self.assertTrue('veggies' in r.data, r.data)
         r = self.setPostRequest('pantry/2/category/4/edit/', 
                                 updated_name='grub')
         self.assertTrue('veggies' not in r.data)
         self.assertTrue('grub' in r.data, r.data)
-        
-    def setSession(self, email):
-        with self.app.session_transaction() as sess:
-            sess['email'] = email
+
+    def testEditCategoryError(self):
+        '''Test editing a category to have no name
+        '''
+        self.setSession('C@ccc.com')
+        r = self.setPostRequest('/pantry/3/category/7/edit/',
+                                updated_name = '')
+        self.assertTrue('You must type a new category name.' in r.data, r.data)
+    
+    def testCategoryJSON(self):
+        '''Test displaying JSON for category.
+        '''
+        self.setSession('A@aaa.com')
+        r = self.setGetRequest('/pantry/1/category/1/json')
+        self.assertTrue('apple' and 'broccoli' in r.data, r.data)
         
     def testDispItem1(self):
         self.setSession('A@aaa.com')
@@ -202,16 +221,112 @@ class TestServer(unittest.TestCase):
     def testAddItem1(self):
         '''Test adding a 'grub' item to user B's pantry.
         '''
-        with self.app.session_transaction() as sess:
-            sess['email'] = 'B@bbb.com'
+        self.setSession('B@bbb.com')
         r = self.setPostRequest('pantry/2/category/5/item/add/', 
                                 new_item_name='grub',
                                 quantity=1,
                                 price=1,
                                 description='food')
         self.assertTrue('grub' in r.data, r.data)
+        
+    def testAddItemNoName(self):
+        '''Test for adding an item without a name. Tests for error message.
+        '''
+        self.setSession('A@aaa.com')
+        r = self.setPostRequest('/pantry/1/category/1/item/add/',
+                                new_item_name='',
+                                quantity=1,
+                                price=1,
+                                description='food')
+        self.assertTrue('A name is required.' in r.data, r.data)
+        
+    def testAddItemForm(self):
+        '''Test that get request displays add item form.
+        '''
+        self.setSession('C@ccc.com')
+        r = self.setGetRequest('/pantry/3/category/7/item/add/')
+        self.assertTrue('Type information about your new item:' in r.data,
+                        r.data)
+        
+    def testDelItem1(self):
+        '''Test deleting broccoli from user A's pantry.
+        '''
+        self.setSession('A@aaa.com')
+        r = self.setGetRequest('/pantry/1/category/1/')
+        self.assertTrue('apple' in r.data)
+        r = self.setPostRequest('/pantry/1/category/1/item/1/delete/',
+                                confirm_del=1)
+        self.assertTrue('apple' not in r.data)
+    
+    def testDelItemForm(self):
+        '''Test get request to this view function displays the delete form.
+        Ensure the proper items are displayed.
+        '''
+        self.setSession('B@bbb.com')
+        r = self.setGetRequest('/pantry/3/category/8/item/4/delete/')
+        self.assertTrue('steak' in r.data, r.data)
+        expected = 'Are you sure you want to delete the <b>steak</b> item from'\
+        ' the <b>meat</b> category?'
+        self.assertTrue(expected in r.data, r.data)
+        
+    def testEditItem1(self):
+        '''Test successfully editing an item. Display the form first.
+        '''
+        self.setSession('A@aaa.com')
+        r = self.setGetRequest('/pantry/2/category/5/item/3/edit/')
+        self.assertTrue('chips' in r.data, r.data)
+        r = self.setPostRequest('/pantry/2/category/5/item/3/edit/',
+                                item_name='chipz',
+                                quantity=1,
+                                price=1,
+                                description='chips but cooler')
+        self.assertTrue('chipz' in r.data, r.data)
+        self.assertFalse('chips' not in r.data)
+
+    def testEditItemError(self):
+        '''Test editing an item and not adding the name back. Renders
+        an error msg.
+        '''
+        self.setSession('A@aaa.com')
+        r = self.setPostRequest('/pantry/2/category/5/item/3/edit/',
+                                item_name='',
+                                quantity=1,
+                                price=1,
+                                description='chips but cooler')
+        self.assertTrue('You must provide a name' in r.data, r.data)
+        self.assertTrue('chips' in r.data, r.data)
+        
+    def testItemJSON(self):
+        '''Test displaying JSON for an item.
+        '''
+        self.setSession('A@aaa.com')
+        r = self.setGetRequest('/pantry/1/category/1/item/1/json/')
+        self.assertTrue('apple' and 'shiny and red' in r.data, r.data)
+    
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
