@@ -26,9 +26,12 @@
     </table>
   </tr>
   <tr>
-    <td><a href="{{url_for('editItem', category_id=category.id, item_id=item.id)}}">Edit this item</a></td>
-    <td><a href="{{url_for('delItem', category_id=category.id, item_id=item.id)}}">Delete this item</a></td>
-    <td><a href="{{url_for('displayCategory', category_id=category.id)}}">Back to category display</a></td>
+    <td><a href="{{url_for('editItem', pantry_id=pantry_id,
+      category_id=category.id, item_id=item.id)}}">Edit this item</a></td>
+    <td><a href="{{url_for('delItem', pantry_id=pantry_id,
+      category_id=category.id, item_id=item.id)}}">Delete this item</a></td>
+    <td><a href="{{url_for('displayCategory', pantry_id=pantry_id,
+      category_id=category.id)}}">Back to category display</a></td>
   </tr>
 
 </table>
