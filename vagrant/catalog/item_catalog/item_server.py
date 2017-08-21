@@ -151,6 +151,7 @@ def home():
     '''
     pass
 
+# no authorized decorator here
 @app.route('/pantry/')
 def pantryIndex():
     '''Displays all pantrys for a given user.
@@ -165,6 +166,7 @@ def pantryIndex():
                            pantries=all_pantries)
 
 @app.route(ADD_PANTRY)
+@isAuthorized
 def addPantry():
     '''Create a new pantry
     '''
@@ -172,13 +174,14 @@ def addPantry():
 
 
 @app.route(DEL_PANTRY)
+@isAuthorized
 def delPantry(pantry_id):
     '''Delete a pantry
     '''
     pass
 
-
 @app.route(EDIT_PANTRY)
+@isAuthorized
 def editPantry(pantry_id):
     '''Edit a pantry.
     '''
@@ -195,8 +198,9 @@ def categoryIndex(pantry_id):
     return render_template(C_INDEX_TMPLT, 
                            categories=all_categories,
                            pantry_id=pantry_id)
-
+    
 @app.route(ALL_CATEGORIES_JSON)
+@isAuthorized
 def getCategoriesJSON(pantry_id):
     '''Provides a JSON representation of the current categories in the DB.
     '''
@@ -204,8 +208,8 @@ def getCategoriesJSON(pantry_id):
     all_categories = db.getAllCategories()
     return jsonify(all_categories=[category.serialize for category
                                    in all_categories])
-
 @app.route(CATEGORY)
+@isAuthorized
 def displayCategory(pantry_id, category_id):
     '''Display individual category page.
     '''
@@ -214,8 +218,8 @@ def displayCategory(pantry_id, category_id):
     allItems = db.getAllObjects('Item', category_id)
     return render_template(C_DISP_TMPLT, category=thisCategory, items=allItems,
                            pantry_id=pantry_id)
-
 @app.route(CATEGORY_JSON)
+@isAuthorized
 def getCategoryJSON(pantry_id, category_id):
     '''Return JSON for individual category.
     '''
@@ -223,8 +227,8 @@ def getCategoryJSON(pantry_id, category_id):
     allItems = db.getAllItems(category_id)
     return jsonify(all_items=[item.serialize for item in allItems])
     
-
 @app.route(EDIT_CATEGORY, methods=['GET', 'POST'])
+@isAuthorized
 def editCategory(pantry_id, category_id):
     '''Edit a category entry.
     '''
@@ -242,8 +246,8 @@ def editCategory(pantry_id, category_id):
     else:
         return render_template(C_EDIT_TMPLT, category=thisCategory)
 
-@isAuthorized
 @app.route(DEL_CATEGORY, methods=['GET', 'POST'])
+@isAuthorized
 def delCategory(pantry_id, category_id):
     '''Delete a category.
     '''
@@ -260,8 +264,8 @@ def delCategory(pantry_id, category_id):
                                items=allItems,
                                pantry_id=pantry_id)
 
-@isAuthorized
 @app.route('/pantry/<int:pantry_id>/category/add/', methods=['GET', 'POST'])
+@isAuthorized
 def addCategory(pantry_id):
     '''Add a category.
     '''
@@ -282,8 +286,8 @@ def addCategory(pantry_id):
     else:
         return render_template(C_ADD_TMPLT)
 
-
 @app.route(ITEM)
+@isAuthorized
 def displayItem(pantry_id, category_id, item_id):
     '''Display an item.
     '''
@@ -294,8 +298,8 @@ def displayItem(pantry_id, category_id, item_id):
                            pantry_id=pantry_id,
                            category=thisCategory, item=thisItem)
 
-
 @app.route(ITEM_JSON)
+@isAuthorized
 def getItemJSON(category_id, item_id):
     '''Return JSON for individual item.
     '''
@@ -304,8 +308,8 @@ def getItemJSON(category_id, item_id):
     return jsonify(item_info=thisItem.serialize)
     
 
-@isAuthorized
 @app.route(DEL_ITEM, methods = ['GET', 'POST'])
+@isAuthorized
 def delItem(category_id, item_id):
     '''Delete an item.
     '''
@@ -318,8 +322,8 @@ def delItem(category_id, item_id):
     else:
         return render_template(I_DEL_TMPLT, category=thisCategory, item=thisItem)
 
-@isAuthorized
 @app.route(EDIT_ITEM, methods=['GET', 'POST'])
+@isAuthorized
 def editItem(category_id, item_id):
     '''Edit an item.
     '''
@@ -341,8 +345,8 @@ def editItem(category_id, item_id):
     else:
         return render_template(I_EDIT_TMPLT, category=thisCategory, item=thisItem)
 
-@isAuthorized
 @app.route(ADD_ITEM, methods=['POST'])
+@isAuthorized
 def addItem(pantry_id, category_id):
     '''Add an item.
     '''
