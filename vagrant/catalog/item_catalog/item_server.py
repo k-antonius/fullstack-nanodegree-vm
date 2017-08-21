@@ -202,10 +202,10 @@ def categoryIndex(pantry_id):
 @app.route(ALL_CATEGORIES_JSON)
 @isAuthorized
 def getCategoriesJSON(pantry_id):
-    '''Provides a JSON representation of the current categories in the DB.
+    '''Provides a JSON representation of the current categories in the pantry.
     '''
     db = getDB()
-    all_categories = db.getAllCategories()
+    all_categories = db.getAllObjects('Category', pantry_id)
     return jsonify(all_categories=[category.serialize for category
                                    in all_categories])
 @app.route(CATEGORY)
@@ -224,7 +224,7 @@ def getCategoryJSON(pantry_id, category_id):
     '''Return JSON for individual category.
     '''
     db = getDB()
-    allItems = db.getAllItems(category_id)
+    allItems = db.getAllObjects('Item', category_id)
     return jsonify(all_items=[item.serialize for item in allItems])
     
 @app.route(EDIT_CATEGORY, methods=['GET', 'POST'])
@@ -300,7 +300,7 @@ def displayItem(pantry_id, category_id, item_id):
 
 @app.route(ITEM_JSON)
 @isAuthorized
-def getItemJSON(category_id, item_id):
+def getItemJSON(pantry_id, category_id, item_id):
     '''Return JSON for individual item.
     '''
     db = getDB()
@@ -310,21 +310,23 @@ def getItemJSON(category_id, item_id):
 
 @app.route(DEL_ITEM, methods = ['GET', 'POST'])
 @isAuthorized
-def delItem(category_id, item_id):
+def delItem(pantry_id, category_id, item_id):
     '''Delete an item.
     '''
     db = getDB()
     thisCategory = db.getDBObjectById('Category', category_id)
     thisItem = db.getDBObjectById('Item', item_id)
     if request.method == 'POST' and request.form['confirm_del']:
-        db.session.delete(thisItem)
-        return redirect(url_for('displayCategory', category_id=category_id))
+        db.delObject(thisItem)
+        return redirect(url_for('displayCategory',
+                                pantry_id=pantry_id, category_id=category_id))
     else:
-        return render_template(I_DEL_TMPLT, category=thisCategory, item=thisItem)
+        return render_template(I_DEL_TMPLT, pantry_id=pantry_id,
+                               category=thisCategory, item=thisItem)
 
 @app.route(EDIT_ITEM, methods=['GET', 'POST'])
 @isAuthorized
-def editItem(category_id, item_id):
+def editItem(pantry_id, category_id, item_id):
     '''Edit an item.
     '''
     db = getDB()
@@ -336,14 +338,19 @@ def editItem(category_id, item_id):
             thisItem.quantity = request.form['quantity']
             thisItem.price = request.form['price']
             thisItem.description = request.form['description']
-            return redirect(url_for('displayItem', category_id=category_id, 
-                             item_id=item_id))
+            return redirect(url_for('displayItem', pantry_id=pantry_id, 
+                                    category_id=category_id, item_id=item_id))
         else:
-            return render_template(I_EDIT_TMPLT, category=thisCategory, 
+            return render_template(I_EDIT_TMPLT,
+                                   pantry_id=pantry_id,
+                                   category=thisCategory, 
                                    item=thisItem,
                                    name_error="You must provide a name.")
     else:
-        return render_template(I_EDIT_TMPLT, category=thisCategory, item=thisItem)
+        return render_template(I_EDIT_TMPLT,
+                               pantry_id=pantry_id,
+                               category=thisCategory, 
+                               item=thisItem)
 
 @app.route(ADD_ITEM, methods=['GET', 'POST'])
 @isAuthorized
