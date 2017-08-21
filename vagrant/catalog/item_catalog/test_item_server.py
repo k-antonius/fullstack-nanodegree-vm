@@ -9,6 +9,7 @@ import unittest
 from test_db_populator import User, Category, Pantry, Item, MockDB
 from db_API import DBInterface
 
+
 class TestMockDatabase(unittest.TestCase):
     '''Tests the base functionality of the mock database.
     '''
@@ -80,12 +81,18 @@ class TestServer(unittest.TestCase):
     def tearDown(self):
         item_server.mock_database = None
         
+    def setGetRequest(self, uri):
+        return self.app.get(uri, follow_redirects=True)
+    
+    def setPostRequest(self, uri, **kwargs):
+        return self.app.post(uri, data=kwargs, follow_redirects=True)
+        
     def testPantryIndex1(self):
         '''Mock user A.
         '''
         with self.app.session_transaction() as sess:
             sess['email'] = "A@aaa.com"
-        r = self.app.get('/pantry/', follow_redirects=True)
+        r = self.setGetRequest('/pantry/')
         self.assertTrue('Pantry_A' in r.data)
         self.assertTrue('Pantry_B' in r.data)
         self.assertFalse('Pantry_C' in r.data)
@@ -95,7 +102,7 @@ class TestServer(unittest.TestCase):
         '''
         with self.app.session_transaction() as sess:
             sess['email'] = "B@bbb.com"
-        r = self.app.get('/pantry/', follow_redirects=True)
+        r = self.setGetRequest('/pantry/')
         self.assertTrue('Pantry_C' in r.data)
         self.assertTrue('Pantry_B' in r.data)
         self.assertFalse('Pantry_A' in r.data)
@@ -103,7 +110,7 @@ class TestServer(unittest.TestCase):
     def testPantryIndexNoUser(self):
         '''No User logged in.
         '''
-        r = self.app.get('/pantry/', follow_redirects=True)
+        r = self.setGetRequest('/pantry/')
         self.assertTrue('You must log in to view that page.' in r.data)
     
     def testCategoryIndex(self):
@@ -112,7 +119,7 @@ class TestServer(unittest.TestCase):
         # mock user A has acces to pantry 1
         with self.app.session_transaction() as sess:
             sess['email'] = "A@aaa.com"
-        r = self.app.get('/pantry/1/', follow_redirects=True)
+        r = self.setGetRequest('/pantry/1/')
         self.assertTrue('vegetables' in r.data)
         self.assertTrue('starches' in r.data)
         self.assertTrue('desserts' in r.data)
@@ -123,25 +130,86 @@ class TestServer(unittest.TestCase):
         '''
         with self.app.session_transaction() as sess:
             sess['email'] = "B@bbb.com"
-        r = self.app.get('/pantry/1/', follow_redirects=True)
+        r = self.setGetRequest('/pantry/1/')
         self.assertTrue('You do not have access to that page.' in r.data)
         
     def testCategoryIndexNoUser(self):
         '''Test the category index page with no logged in user.
         '''
-        r = self.app.get('/pantry/1/', follow_redirects=True)
+        r = self.setGetRequest('/pantry/1/')
         self.assertTrue('You must log in to view that page.' in r.data)
         
-    def testAddCategory(self):
-        '''Test adding a category for user C.
+    def testAddCategory1(self):
+        '''Test adding a category for user A. Then test if its empyt.
+        '''
+        with self.app.session_transaction() as sess:
+            sess['email'] = 'A@aaa.com'
+        r = self.setPostRequest('/pantry/1/category/add/',
+                                new_category_name='some grub')
+        self.assertTrue('some grub' in r.data, r.data)
+        expected = 'There are no items in the <b>some grub</b>' \
+        ' category to display yet. Add some!'
+        r = self.setGetRequest('/pantry/1/category/10/')
+        self.assertTrue(expected in r.data, r.data)
+
+    def testAddCategory2(self):
+        '''Test adding a category for user C. Then test if the category is 
+        empty.
         '''
         with self.app.session_transaction() as sess:
             sess['email'] = 'C@ccc.com'
-        r = self.app.post('/pantry/3/category/add', data=dict(
-            name='new_category'), follow_redirects=True)
-        self.assertTrue('new_category' in r.data)
-        
+        r = self.setPostRequest('/pantry/3/category/add/',
+                                new_category_name='jalapenos')
+        self.assertTrue('jalapenos' in r.data, r.data)
+        expected = 'There are no items in the <b>jalapenos</b>' \
+        ' category to display yet. Add some!'
+        r = self.setGetRequest('/pantry/3/category/10/')
+        self.assertTrue(expected in r.data, r.data)
 
+    def testDelCategory1(self):
+        '''Test deleting a category for user A.
+        '''
+        with self.app.session_transaction() as sess:
+            sess['email'] = 'A@aaa.com'
+        r = self.setGetRequest('/pantry/1/')
+        self.assertTrue('vegetables' in r.data, 'vegetables was not' \
+                        ' present before test.')
+        r = self.setPostRequest('/pantry/1/category/1/delete/',
+                                confirm_del=1)
+        self.assertTrue('vegetables' not in r.data, r.data)
+        
+    def testEditCategory1(self):
+        '''Test editing the veggies category, changing to 'grub' cateogry
+        for user B.
+        '''
+        with self.app.session_transaction() as sess:
+            sess['email'] = 'B@bbb.com'
+        r = self.setPostRequest('pantry/2/category/4/edit/', 
+                                updated_name='grub')
+        self.assertTrue('veggies' not in r.data)
+        self.assertTrue('grub' in r.data, r.data)
+        
+    def setSession(self, email):
+        with self.app.session_transaction() as sess:
+            sess['email'] = email
+        
+    def testDispItem1(self):
+        self.setSession('A@aaa.com')
+        r = self.setGetRequest('/pantry/1/category/1/item/1/')
+        self.assertTrue('apple' in r.data)
+        self.assertTrue('shiny and red' in r.data)
+        
+    def testAddItem1(self):
+        '''Test adding a 'grub' item to user B's pantry.
+        '''
+        with self.app.session_transaction() as sess:
+            sess['email'] = 'B@bbb.com'
+        r = self.setPostRequest('pantry/2/category/5/item/add/', 
+                                new_item_name='grub',
+                                quantity=1,
+                                price=1,
+                                description='food')
+        self.assertTrue('grub' in r.data, r.data)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
