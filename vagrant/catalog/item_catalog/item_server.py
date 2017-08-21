@@ -345,7 +345,7 @@ def editItem(category_id, item_id):
     else:
         return render_template(I_EDIT_TMPLT, category=thisCategory, item=thisItem)
 
-@app.route(ADD_ITEM, methods=['POST'])
+@app.route(ADD_ITEM, methods=['GET', 'POST'])
 @isAuthorized
 def addItem(pantry_id, category_id):
     '''Add an item.
