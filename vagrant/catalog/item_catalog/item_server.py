@@ -211,8 +211,9 @@ def displayCategory(pantry_id, category_id):
     '''
     db = getDB()
     thisCategory = db.getDBObjectById('Category', category_id)
-    allItems = db.getAllItems(category_id)
-    return render_template(C_DISP_TMPLT, category=thisCategory, items=allItems)
+    allItems = db.getAllObjects('Item', category_id)
+    return render_template(C_DISP_TMPLT, category=thisCategory, items=allItems,
+                           pantry_id=pantry_id)
 
 @app.route(CATEGORY_JSON)
 def getCategoryJSON(pantry_id, category_id):
@@ -232,7 +233,7 @@ def editCategory(pantry_id, category_id):
     if request.method == "POST":
         if request.form["updated_name"]:
             thisCategory.name = request.form["updated_name"]
-            return redirect(url_for("categoryIndex"))
+            return redirect(url_for("categoryIndex", pantry_id=pantry_id))
         else:
             error = "You must type a new category name."
             return render_template(C_EDIT_TMPLT,
@@ -241,7 +242,7 @@ def editCategory(pantry_id, category_id):
     else:
         return render_template(C_EDIT_TMPLT, category=thisCategory)
 
-
+@isAuthorized
 @app.route(DEL_CATEGORY, methods=['GET', 'POST'])
 def delCategory(pantry_id, category_id):
     '''Delete a category.
@@ -249,17 +250,18 @@ def delCategory(pantry_id, category_id):
     # display items to be deleted.
     db = getDB()
     thisCategory = db.getDBObjectById('Category', category_id)
-    allItems = db.getAllItems(category_id)
+    allItems = db.getAllObjects('Item', category_id)
     if request.method == 'POST' and request.form['confirm_del']:
-        db.session.delete(thisCategory)
-        return redirect(url_for('categoryIndex'))
+        db.delObject(thisCategory)
+        return redirect(url_for('categoryIndex', pantry_id=pantry_id))
     else:
         return render_template(C_DEL_TMPLT, 
                                category=thisCategory,
-                               items=allItems)
+                               items=allItems,
+                               pantry_id=pantry_id)
 
-
-@app.route(ADD_CATEGORY, methods=['GET', 'POST'])
+@isAuthorized
+@app.route('/pantry/<int:pantry_id>/category/add/', methods=['GET', 'POST'])
 def addCategory(pantry_id):
     '''Add a category.
     '''
@@ -267,14 +269,13 @@ def addCategory(pantry_id):
     if request.method == 'POST':
         name = request.form['new_category_name']
         if name:
-            duplicate = db.getObjectByName('Category', name, pantry_id)
+            duplicate = db.getDBObjectByName('Category', name, pantry_id)
             if duplicate:
                 return render_template(C_ADD_TMPLT, 
                                        form_error="That category already" \
                                        + " exists.")
-            newCategory = db.addObject('Category', name, pantry_id)
-            db.session.addObject(newCategory)
-            return redirect(url_for('categoryIndex'))
+            db.addObject('Category', name, pantry_id)
+            return redirect(url_for('categoryIndex', pantry_id=pantry_id))
         else:
             return render_template(C_ADD_TMPLT, 
                                    form_error="The name can't be blank!")
@@ -283,13 +284,15 @@ def addCategory(pantry_id):
 
 
 @app.route(ITEM)
-def displayItem(category_id, item_id):
+def displayItem(pantry_id, category_id, item_id):
     '''Display an item.
     '''
     db = getDB()
     thisCategory = db.getDBObjectById('Category', category_id)
     thisItem = db.getDBObjectById('Item', item_id)
-    return render_template(I_DISP_TMPLT, category=thisCategory, item=thisItem)
+    return render_template(I_DISP_TMPLT,
+                           pantry_id=pantry_id,
+                           category=thisCategory, item=thisItem)
 
 
 @app.route(ITEM_JSON)
@@ -301,7 +304,7 @@ def getItemJSON(category_id, item_id):
     return jsonify(item_info=thisItem.serialize)
     
 
-
+@isAuthorized
 @app.route(DEL_ITEM, methods = ['GET', 'POST'])
 def delItem(category_id, item_id):
     '''Delete an item.
@@ -315,7 +318,7 @@ def delItem(category_id, item_id):
     else:
         return render_template(I_DEL_TMPLT, category=thisCategory, item=thisItem)
 
-
+@isAuthorized
 @app.route(EDIT_ITEM, methods=['GET', 'POST'])
 def editItem(category_id, item_id):
     '''Edit an item.
@@ -338,9 +341,9 @@ def editItem(category_id, item_id):
     else:
         return render_template(I_EDIT_TMPLT, category=thisCategory, item=thisItem)
 
-
-@app.route(ADD_ITEM, methods=['GET', 'POST'])
-def addItem(category_id):
+@isAuthorized
+@app.route(ADD_ITEM, methods=['POST'])
+def addItem(pantry_id, category_id):
     '''Add an item.
     '''
     if request.method == 'POST':
@@ -352,7 +355,9 @@ def addItem(category_id):
                          request.form["price"],
                          request.form["description"],
                          category_id)
-            return redirect(url_for("displayCategory", category_id=category_id))
+            return redirect(url_for("displayCategory",
+                                    pantry_id=pantry_id,
+                                    category_id=category_id))
         else:
             return render_template(I_ADD_TMPLT, category=category_id,
                                    name_error="A name is required.")
