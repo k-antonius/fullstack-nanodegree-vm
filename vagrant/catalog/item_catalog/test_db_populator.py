@@ -23,6 +23,14 @@ class Pantry(object):
         
     def __repr__(self):
         return self.name
+
+    @property
+    def serialize(self):
+        '''Return object attributes as dict
+        '''
+        return {'name' : self.name,
+                'id' : self.id,
+                'parent_id' : self.parent_id}
         
 class Category(object):
     def __init__(self, id, name, parent_id):
@@ -32,6 +40,16 @@ class Category(object):
         
     def __repr__(self):
         return self.name
+    
+    @property
+    def serialize(self):
+        '''Return copy of object attributes as
+        dictionary.
+        '''
+        return {'name' : self.name,
+                'id' : self.id,
+                'parent_id' : self.parent_id
+                }
 
 class Item(object):
     def __init__(self, id, name, description, quantity, price, category_id):
@@ -44,6 +62,16 @@ class Item(object):
     
     def __repr__(self):
         return self.name
+    
+    @property
+    def serialize(self):
+        return {'name' : self.name,
+                'id' : self.id,
+                'description' : self.description,
+                'quantity' : self.quantity,
+                'price' : self.price,
+                'parent_id' : self.parent_id,
+                }
 
 class MockDB(object):
 
@@ -70,8 +98,8 @@ class MockDB(object):
         
         self.items = [Item(1, 'apple', 'shiny and red', 5, 1.0, 1),  # 0
                       Item(2, 'broccoli', 'small tree', 10, 0.5, 1), # 1
-                      Item(3, 'chips', 'crispy', 4, 5.0, 2),         # 2
-                      Item(4, 'steak', 'high in protein', 1, 20.0, 2),
+                      Item(3, 'chips', 'crispy', 4, 5.0, 5),         # 2
+                      Item(4, 'steak', 'high in protein', 1, 20.0, 8),
                       Item(5, 'seltzer', 'fizzy', 15, 1.0, 3),
                       Item(6, 'cake', 'moist', 1, 15.0, 3),
                       Item(7, 'potato', 'high in carbs', 50, 0.20, 2)]
