@@ -10,11 +10,20 @@
     <div id="main_title_nav_bar">
       <tr>
         <td><a href="{{url_for('home')}}">Home</a></td>
-        <td><a href="{{url_for('addCategory')}}">Add Category</a></td>
         <td>
           <form method="post" action="{{url_for('gdisconnect')}}">
             <button>Logout</button>
           </form>
+        </td>
+      </tr>
+      <tr>
+        <td>{% with messages = get_flashed_messages() %}
+              {% if messages %}
+                {% for message in messages %}
+                  {{message}}
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
         </td>
       </tr>
     </div>
