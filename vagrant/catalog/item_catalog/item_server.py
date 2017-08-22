@@ -121,12 +121,32 @@ def teardown_session(exception):
                     session.close()
     g._database = None
 
+
+def isLoggedIn(fun):
+    '''Checks to see if a user is logged in.
+    '''
+    @wraps(fun)
+    def wrapper(*args, **kwargs):
+        user_email = flask_session.get('email')
+        if user_email is not None:
+            db = getDB()
+            user = db.getUserByEmail(user_email)
+            if user is not None:
+                return fun(*args, **kwargs)
+            else:
+                return abort(404)
+        else:
+            flash('You must log in to view that page.')
+            return redirect(url_for('login'))
+    return wrapper
+
+
+# @isLoggedIn
 def isAuthorized(fun):
     '''Checks whether a user is logged in and authorized to view a page.
     '''
     @wraps(fun)
     def wrapper(*args, **kwargs):
-        
         user_email = flask_session.get('email')
         if user_email is not None:
             db = getDB()
@@ -166,7 +186,7 @@ def pantryIndex():
                            pantries=all_pantries)
 
 @app.route(ADD_PANTRY, methods=['GET', 'POST'])
-@isAuthorized
+@isLoggedIn
 def addPantry():
     '''Create a new pantry.
     '''
