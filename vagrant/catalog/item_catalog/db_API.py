@@ -141,6 +141,11 @@ class MockDBAccessor(object):
         newObj = constructor(*argsWithId)
         newObj.id = new_id
         mockTable.append(newObj)
+        # if it is a pantry need to update user pantry access id reference
+        if className == 'Pantry':
+            user = filter(lambda x:x.id == newObj.parent_id,
+                          self.session.mock_db.get('User'))
+            user[0].pantries.append(newObj.id)
     
     def delObject(self, obj):
         '''Delete an object from the list.
