@@ -119,6 +119,12 @@ class TestServer(unittest.TestCase):
         '''
         r = self.setGetRequest('/pantry/')
         self.assertTrue('You must log in to view that page.' in r.data)
+        
+    def testAddPantry(self):
+        self.setSession('A@aaa.com')
+        r = self.setPostRequest('/pantry/add/',
+                                new_pantry_name='grub')
+        self.assertTrue('grub' in r.data, r.data)
     
     def testCategoryIndex(self):
         '''Test the category index page with a user having access.
