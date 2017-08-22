@@ -201,7 +201,7 @@ def addPantry():
                                        form_error='You already have a pantry' \
                                        ' with that name.' \
                                        ' Please choose another.')
-            db.addObject('Pantry', name=name, parent_id=user.id)
+            db.addObject('Pantry', name, user.id)
             return redirect(url_for('pantryIndex'))
         else:
             return render_template(P_ADD_TMPLT,
