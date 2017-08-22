@@ -165,12 +165,28 @@ def pantryIndex():
     return render_template(P_INDEX_TMPLT,
                            pantries=all_pantries)
 
-@app.route(ADD_PANTRY)
+@app.route(ADD_PANTRY, methods=['GET', 'POST'])
 @isAuthorized
 def addPantry():
-    '''Create a new pantry
+    '''Create a new pantry.
     '''
-    pass
+    db = getDB()
+    if request.method == 'POST':
+        name = request.form['new_pantry_name']
+        if name:
+            user = db.getUserByEmail(flask_session.get('email'))
+            duplicate = db.getDBObjectByName('Pantry', name, user.id)
+            if duplicate:
+                return render_template(P_ADD_TMPLT,
+                                       form_error='You already have a pantry' \
+                                       ' with that name.' \
+                                       ' Please choose another.')
+            db.addObject('Pantry', name=name, parent_id=user.id)
+            return redirect(url_for('pantryIndex'))
+        else:
+            return render_template(P_ADD_TMPLT,
+                                   form_error="The name can't be blank.")
+    else: render_template(P_ADD_TMPLT)
 
 
 @app.route(DEL_PANTRY)
