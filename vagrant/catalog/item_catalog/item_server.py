@@ -132,6 +132,7 @@ def isLoggedIn(fun):
             db = getDB()
             user = db.getUserByEmail(user_email)
             if user is not None:
+                kwargs['user'] = user
                 return fun(*args, **kwargs)
             else:
                 return abort(404)
@@ -141,7 +142,6 @@ def isLoggedIn(fun):
     return wrapper
 
 
-# @isLoggedIn
 def isAuthorized(fun):
     '''Checks whether a user is logged in and authorized to view a page.
     '''
@@ -151,14 +151,18 @@ def isAuthorized(fun):
         if user_email is not None:
             db = getDB()
             user = db.getUserByEmail(user_email)
-            pantry_id = kwargs.get('pantry_id')
-            assert pantry_id, "This function requires a pantry id."
-            pantry = db.getDBObjectById('Pantry', pantry_id)
-            if pantry in db.getAuthorizedPantries(user):
-                return fun(*args, **kwargs)
+            if user is not None:
+                pantry_id = kwargs.get('pantry_id')
+                assert pantry_id, "This function requires a pantry id."
+                pantry = db.getDBObjectById('Pantry', pantry_id)
+                if pantry in db.getAuthorizedPantries(user):
+                    kwargs['user'] = user
+                    return fun(*args, **kwargs)
+                else:
+                    flash('You do not have access to that page.')
+                    return redirect(url_for('pantryIndex'))
             else:
-                flash('You do not have access to that page.')
-                return redirect(url_for('pantryIndex'))
+                return abort(404)
         else:
             flash('You must log in to view that page.')
             return redirect(url_for('login'))
@@ -171,30 +175,25 @@ def home():
     '''
     pass
 
-# no authorized decorator here
 @app.route('/pantry/')
-def pantryIndex():
+@isLoggedIn
+def pantryIndex(user, **kwargs):
     '''Displays all pantrys for a given user.
     '''
     db = getDB()
-    user = db.getUserByEmail(flask_session.get('email'))
-    if user is None:
-        flash('You must log in to view that page.')
-        return redirect(url_for('login'))
     all_pantries = db.getAuthorizedPantries(user)
     return render_template(P_INDEX_TMPLT,
                            pantries=all_pantries)
 
 @app.route(ADD_PANTRY, methods=['GET', 'POST'])
 @isLoggedIn
-def addPantry():
+def addPantry(user, **kwargs):
     '''Create a new pantry.
     '''
     db = getDB()
     if request.method == 'POST':
         name = request.form['new_pantry_name']
         if name:
-            user = db.getUserByEmail(flask_session.get('email'))
             duplicate = db.getDBObjectByName('Pantry', name, user.id)
             if duplicate:
                 return render_template(P_ADD_TMPLT,
@@ -209,24 +208,48 @@ def addPantry():
     else: render_template(P_ADD_TMPLT)
 
 
-@app.route(DEL_PANTRY)
+@app.route(DEL_PANTRY, methods=['GET', 'POST'])
 @isAuthorized
-def delPantry(pantry_id):
+def delPantry(user, pantry_id, **kwargs):
     '''Delete a pantry
     '''
-    pass
+    db = getDB()
+    thisPantry = db.getDBObjectById('Pantry', user.id)
+    allCategories = db.getAllObjects('Category', pantry_id)
+    if request.method == 'POST' and request.form['confirm_del']:
+        db.delObject(thisPantry)
+        return redirect(url_for('pantryIndex'))
+    else:
+        return render_template(P_DEL_TMPLT,
+                               pantry = thisPantry,
+                               categories = allCategories)
+      
 
-@app.route(EDIT_PANTRY)
-@isAuthorized
-def editPantry(pantry_id):
+@app.route(EDIT_PANTRY, methods=['GET', 'POST'])
+@isLoggedIn
+def editPantry(user, pantry_id, **kwargs):
     '''Edit a pantry.
     '''
-    pass
+    db = getDB()
+    thisPantry = db.getDBObjectById('Pantry', pantry_id)
+    if request.method == 'POST':
+        editedName = request.form.get('updated_name')
+        if editedName:
+            thisPantry.name = editedName
+            return redirect(url_for('pantryIndex'))
+        else:
+            error = 'The pantry name cannot be blank.'
+            return render_template(P_EDIT_TMPLT, pantry=thisPantry,
+                                   form_error=error)
+    else:
+        return render_template(P_EDIT_TMPLT, pantry=thisPantry)
+             
+             
 
 
 @app.route(PANTRY, methods=['GET', 'POST'])
 @isAuthorized
-def categoryIndex(pantry_id):
+def categoryIndex(pantry_id, **kwargs):
     '''Display the category index page.
     '''
     db = getDB()
@@ -237,7 +260,7 @@ def categoryIndex(pantry_id):
     
 @app.route(ALL_CATEGORIES_JSON)
 @isAuthorized
-def getCategoriesJSON(pantry_id):
+def getCategoriesJSON(pantry_id, **kwargs):
     '''Provides a JSON representation of the current categories in the pantry.
     '''
     db = getDB()
@@ -246,7 +269,7 @@ def getCategoriesJSON(pantry_id):
                                    in all_categories])
 @app.route(CATEGORY)
 @isAuthorized
-def displayCategory(pantry_id, category_id):
+def displayCategory(pantry_id, category_id, **kwargs):
     '''Display individual category page.
     '''
     db = getDB()
@@ -256,7 +279,7 @@ def displayCategory(pantry_id, category_id):
                            pantry_id=pantry_id)
 @app.route(CATEGORY_JSON)
 @isAuthorized
-def getCategoryJSON(pantry_id, category_id):
+def getCategoryJSON(pantry_id, category_id, **kwargs):
     '''Return JSON for individual category.
     '''
     db = getDB()
@@ -265,7 +288,7 @@ def getCategoryJSON(pantry_id, category_id):
     
 @app.route(EDIT_CATEGORY, methods=['GET', 'POST'])
 @isAuthorized
-def editCategory(pantry_id, category_id):
+def editCategory(pantry_id, category_id, **kwargs):
     '''Edit a category entry.
     '''
     db = getDB()
@@ -284,10 +307,9 @@ def editCategory(pantry_id, category_id):
 
 @app.route(DEL_CATEGORY, methods=['GET', 'POST'])
 @isAuthorized
-def delCategory(pantry_id, category_id):
+def delCategory(pantry_id, category_id, **kwargs):
     '''Delete a category.
     '''
-    # display items to be deleted.
     db = getDB()
     thisCategory = db.getDBObjectById('Category', category_id)
     allItems = db.getAllObjects('Item', category_id)
@@ -302,7 +324,7 @@ def delCategory(pantry_id, category_id):
 
 @app.route('/pantry/<int:pantry_id>/category/add/', methods=['GET', 'POST'])
 @isAuthorized
-def addCategory(pantry_id):
+def addCategory(pantry_id, **kwargs):
     '''Add a category.
     '''
     db = getDB()
@@ -324,7 +346,7 @@ def addCategory(pantry_id):
 
 @app.route(ITEM)
 @isAuthorized
-def displayItem(pantry_id, category_id, item_id):
+def displayItem(pantry_id, category_id, item_id, **kwargs):
     '''Display an item.
     '''
     db = getDB()
@@ -336,7 +358,7 @@ def displayItem(pantry_id, category_id, item_id):
 
 @app.route(ITEM_JSON)
 @isAuthorized
-def getItemJSON(pantry_id, category_id, item_id):
+def getItemJSON(pantry_id, category_id, item_id, **kwargs):
     '''Return JSON for individual item.
     '''
     db = getDB()
@@ -346,7 +368,7 @@ def getItemJSON(pantry_id, category_id, item_id):
 
 @app.route(DEL_ITEM, methods = ['GET', 'POST'])
 @isAuthorized
-def delItem(pantry_id, category_id, item_id):
+def delItem(pantry_id, category_id, item_id, **kwargs):
     '''Delete an item.
     '''
     db = getDB()
@@ -362,7 +384,7 @@ def delItem(pantry_id, category_id, item_id):
 
 @app.route(EDIT_ITEM, methods=['GET', 'POST'])
 @isAuthorized
-def editItem(pantry_id, category_id, item_id):
+def editItem(pantry_id, category_id, item_id, **kwargs):
     '''Edit an item.
     '''
     db = getDB()
@@ -390,7 +412,7 @@ def editItem(pantry_id, category_id, item_id):
 
 @app.route(ADD_ITEM, methods=['GET', 'POST'])
 @isAuthorized
-def addItem(pantry_id, category_id):
+def addItem(pantry_id, category_id, **kwargs):
     '''Add an item.
     '''
     if request.method == 'POST':
