@@ -121,10 +121,59 @@ class TestServer(unittest.TestCase):
         self.assertTrue('You must log in to view that page.' in r.data)
         
     def testAddPantry(self):
+        '''Test adding a pantry to user A's pantry access list.
+        '''
         self.setSession('A@aaa.com')
         r = self.setPostRequest('/pantry/add/',
                                 new_pantry_name='grub')
         self.assertTrue('grub' in r.data, r.data)
+        
+    def testAddPantryDuplicate(self):
+        '''Test adding pantry with duplicate name.
+        '''
+        self.setSession("A@aaa.com")
+        r = self.setPostRequest("/pantry/add/",
+                                new_pantry_name="Pantry_A")
+        expected = "You already have a pantry with that name. Please choose" \
+        " another."
+        self.assertTrue(expected in r.data, r.data)
+        
+    def testAddPantryNoName(self):
+        '''Test added a pantry with the name field blank.
+        '''
+        self.setSession('C@ccc.com')
+        r = self.setPostRequest('/pantry/add/', new_pantry_name='')
+        expected = "The name can't be blank."
+        self.assertTrue(expected in r.data, r.data)
+        
+    def testDelPantry(self):
+        self.setSession('A@aaa.com')
+        r = self.setGetRequest('/pantry/')
+        self.assertTrue('Pantry_A' in r.data, r.data)
+        r = self.setPostRequest('/pantry/1/delete/', confirm_del=1)
+        self.assertFalse('Pantry_A' in r.data, r.data)
+        
+    def testDelPantryForm(self):
+        self.setSession('A@aaa.com')
+        r = self.setGetRequest('/pantry/1/delete/')
+        self.assertTrue('Pantry_A' in r.data, r.data)
+        self.assertTrue('vegetables' in r.data, r.data)
+        self.assertTrue('starches' in r.data, r.data)
+        self.assertTrue('desserts' in r.data, r.data)
+        
+    def testEditPantry(self):
+        self.setSession('B@bbb.com')
+        gr = self.setGetRequest('/pantry/2/edit/')
+        self.assertTrue('Pantry_B' in gr.data, gr.data)
+        pr = self.setPostRequest('/pantry/2/edit/', updated_name='B_Pantry')
+        self.assertTrue('B_Pantry' in pr.data, pr.data)
+        self.assertTrue('Pantry_B' not in pr.data, pr.data)
+        
+    def testEditPantryNoName(self):
+        self.setSession('B@bbb.com')
+        r = self.setPostRequest('/pantry/2/edit/', updated_name = '')
+        self.assertTrue('Pantry_B' in r.data, r.data)
+        self.assertTrue('The pantry name cannot be blank.' in r.data, r.data)
     
     def testCategoryIndex(self):
         '''Test the category index page with a user having access.
