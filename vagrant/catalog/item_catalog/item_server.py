@@ -244,7 +244,15 @@ def editPantry(user, pantry_id, **kwargs):
     else:
         return render_template(P_EDIT_TMPLT, pantry=thisPantry)
              
-             
+
+@app.route(PANTRY_JSON)
+@isLoggedIn
+def getPantriesJSON(user, **kwargs):
+    '''Display JSON for this user's pantries. Does not display shared pantries.
+    '''
+    db = getDB()
+    allPantries = db.getAllObjects("Pantry", user.id)
+    return jsonify(allPantries=[pantry.serialize for pantry in allPantries])
 
 
 @app.route(PANTRY, methods=['GET', 'POST'])
