@@ -11,10 +11,10 @@
     </td>
   </tr>
   <tr>
-    <td>{{form_error}}</td>
+    <td>{{form_error|safe}}</td>
   </tr>
   <tr>
-    <td><a href="{{url_for('home')}}">Cancel Add</a></td>
+    <td><a href="{{url_for('pantryIndex')}}">Cancel Add</a></td>
   </tr>
 </table>
 {% endblock %}

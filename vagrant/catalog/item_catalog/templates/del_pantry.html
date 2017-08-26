@@ -15,7 +15,7 @@
             </form>
           </td>
           <td>
-            <form method="get" action="{{url_for('displayPantry', pantry_id=pantry.id)}}">
+            <form method="get" action="{{url_for('pantryIndex')}}">
               <button name="cancel_del" type="submit">No</button>
             </form>
           </td>
@@ -24,7 +24,8 @@
     </td>
   </tr>
   <tr>
-    <td>If you choose to delete this pantry, all the items in the following categories will also be deleted:</td>
+    <td>If you choose to delete this pantry, all the items in the following categories and the categories themselves
+       will also be deleted:</td>
   </tr>
   <tr>
   {% if not categories %}
