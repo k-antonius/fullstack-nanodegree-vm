@@ -174,6 +174,14 @@ class TestServer(unittest.TestCase):
         r = self.setPostRequest('/pantry/2/edit/', updated_name = '')
         self.assertTrue('Pantry_B' in r.data, r.data)
         self.assertTrue('The pantry name cannot be blank.' in r.data, r.data)
+        
+    def testPantryJSON(self):
+        self.setSession('A@aaa.com')
+        r = self.setGetRequest('/pantry/1/json/')
+        self.assertTrue('Pantry_A' in r.data, r.data)
+        self.assertTrue('1' in r.data, r.data)
+        self.assertTrue('Pantry_D' in r.data, r.data)
+        self.assertTrue('4' in r.data, r.data)
     
     def testCategoryIndex(self):
         '''Test the category index page with a user having access.
