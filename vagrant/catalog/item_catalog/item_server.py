@@ -463,7 +463,8 @@ def buildJSONResponse(msg, response_code):
 
 def checkUser():
     '''Checks to see whether this user has used the app before. If not, 
-    is adds the user to the database.  The user's info comes directly from
+    is adds the user to the database. If the user has, this updates their
+    username if necessary.  The user's info comes directly from
     the flask session, so it is an error to call this method when the
     session is empty.
     '''
@@ -475,7 +476,6 @@ def checkUser():
     else:
         user = db.addObject('User', flask_session['username'],
                             flask_session['email'])
-        
     
 
 # @app.route(GCONNECT, methods=['POST'])
