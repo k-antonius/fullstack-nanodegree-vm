@@ -13,19 +13,18 @@ Base = declarative_base()
 
 # association table
 pantry_access = Table('pantry_access', Base.metadata,
-                      Column('user_id', Integer, ForeignKey('user.id')),
+                      Column('user_id', Integer, ForeignKey('users.id')),
                       Column('pantry_id', Integer, ForeignKey('pantry.id')))
 
 class User(Base):
-    __tablename__ = 'user'
+    __tablename__ = 'users'
     name = Column(String(80), nullable = False)
     id = Column(Integer, primary_key = True)
     email = Column(String(80), nullable = False)
-    picture = Column(String(80))
-    pantries = relationship('Pantry', secondary=pantry_access, backref='user')
+    children = relationship('Pantry', secondary=pantry_access, backref='users')
     
     
-    def __init__(self, name, email, pantries):
+    def __init__(self, name, email):
         self.name = name
         self.email = email
 
@@ -34,8 +33,9 @@ class Pantry(Base):
     __tablename__ = 'pantry'
     name = Column(String(80), nullable = False)
     id = Column(Integer, primary_key = True)
-    parent_id = Column(Integer, ForeignKey('user.id'))
-    user = relationship('User')
+    parent_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    children = relationship('Category', backref='parent',
+                              cascade='all, delete-orphan')
     
     def __init__(self, name, parent_id):
         self.name = name
@@ -54,8 +54,9 @@ class Category(Base):
     __tablename__ = 'category'
     name = Column(String(80), nullable = False)
     id = Column(Integer, primary_key = True)
-    parent_id = Column(Integer, ForeignKey('pantry.id'))
-    Pantry = relationship(Pantry)
+    parent_id = Column(Integer, ForeignKey('pantry.id'), nullable=False)
+    children = relationship('Item', backref = 'parent',
+                         cascade='all, delete-orphan')
     
     def __init__(self, name, parent_id):
         self.name = name
@@ -79,15 +80,14 @@ class Item(Base):
     description = Column(String(250))
     quantity = Column(Integer)
     price = Column(Integer)
-    parent_id = Column(Integer, ForeignKey('category.id'))
-    Category = relationship(Category)
+    parent_id = Column(Integer, ForeignKey('category.id'), nullable=False)
     
-    def __init__(self, name, description, quantity, price, category_id):
-        self.name = name,
+    def __init__(self, name, description, quantity, price, parent_id):
+        self.name = name
         self.description = description
-        self. quantity = quantity
+        self.quantity = quantity
         self.price = price
-        self.parent_id = category_id
+        self.parent_id = parent_id
     
     @property
     def serialize(self):
@@ -101,7 +101,6 @@ class Item(Base):
                 }
 
 
-### End of file  ###
 def createDB(testing=False):
 #     engine = None
     if testing:
