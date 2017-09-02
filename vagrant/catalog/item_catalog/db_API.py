@@ -4,7 +4,7 @@ Created on Aug 7, 2017
 @author: kennethalamantia
 '''
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 from catalog_database_setup import Base, Category, Item, Pantry, User
 
@@ -14,12 +14,15 @@ class DBInterface(object):
     in memory python data structures. 
     '''
     @classmethod
-    def makeSessionFactory(cls):
+    def makeSessionFactory(cls, testing=False):
         '''Create a SQL Alchemy session factory. This is not used in the 
         initializer because there is no need to re-create the factory object
         every time an instance of this class is created.
         '''
-        engine = create_engine('sqlite:///item_catalog.db')
+        if testing:
+            engine = create_engine('sqlite:///test_item_catalog.db')
+        else:
+            engine = create_engine('sqlite:///item_catalog.db')
         Base.metadata.bind = engine
         return sessionmaker(bind=engine)
     
@@ -35,17 +38,26 @@ class DBInterface(object):
             self.db = MockDBAccessor(session)
         else:
             self.db = DBAccessor(session)
+            
+    def _commit(self):
+        '''For testing only. Commits changes to the database.
+        '''
+        self.db.session.commit()
+        
+    def _close(self):
+        '''For testing only. Closes the session.
+        '''
     
     def getDBObjectById(self, objClass, objId):
         '''Get single database object based on its ID.
         '''
         return self.db.getObj(objClass, objId)
     
-    def getAllObjects(self, objClass, superId):
+    def getAllObjects(self, objClass, parentId):
         '''Get all objets of given class. If superID is supplied,
         only objects directly related to superId will be returned.
         '''
-        return self.db.getAllObjects(objClass, superId)
+        return self.db.getAllObjects(objClass, parentId)
     
     def getDBObjectByName(self, objClass, name, parentId):
         '''Return any objects matching this query as a list.
@@ -63,10 +75,9 @@ class DBInterface(object):
     
     def getAuthorizedPantries(self, user):
         '''Return a list of users authorized to access a pantry
-        @param user: the accessing user.
+        @param user: the accessing user ORM object.
         '''
-        if self.testing:
-            return self.db.getAuthorizedPantries(user)
+        return self.db.getAuthorizedPantries(user)
     
     def addObject(self, className, *args):
         '''Add an object to the database. 
@@ -75,10 +86,8 @@ class DBInterface(object):
         @param kwargs: keys are the fields of the class and values are the
         data
         '''
-        if self.testing:
-            self.db.addObject(className, *args)
-        else:
-            pass
+        self.db.addObject(className, *args)
+        
         
     def delObject(self, obj):
         '''CRUD delete this entity from the database.
@@ -134,7 +143,12 @@ class MockDBAccessor(object):
         '''Create a new entry in the mock table. 
         '''
         mockTable = self.session.mock_db.get(className)
+        # get the constructor from the mock database --
+        # the construtors are in a dict, would conflict with names of
+        # mapped classes for ORM
         constructor = self.session.constructor.get(className)
+        # make a new id for the object, assume it is going at the end of the 
+        # list (mock db lists are ordered by id)
         new_id = mockTable[len(mockTable)-1].id + 1
         argsWithId = list(args)
         argsWithId.insert(0, new_id)
@@ -170,34 +184,83 @@ class DBAccessor(object):
      
     def __init__(self, session):
         self.session = session
+        # access to constructor from string
         self.classes = {'User' : User,
                         'Pantry' : Pantry,
                         'Category' : Category,
                         'Item' : Item}
+        # table allows retrieval of parent from only knowing child 
+        self.parents = {'Item' : 'Category',
+                        'Category' : 'Pantry',
+                        'Pantry' : 'User'}
       
-    def getDBObj(self, objClass, objID):
-        '''Returns an ORM object.
-        @param session: SQLAlchemy session instance
-        @param objClass: ORM table class
-        @param objID: ORM row object
+    def getObj(self, objClassName, objId):
+        '''Returns an ORM object. Raise an exception if more than one is found.
+        @param objClass: ORM table class, as a string
+        @param objID: integer id of the object to query for
         '''
-        return self.session.query(objClass).filter_by(id=objID).one()
-        
-              
-    def getObjByName(self, objClass, name, parentId):
-        '''No exception is thrown if this fails.
-        '''
-        return self.session.query(objClass).filter_by(name=name).first()
+        objClass = self.classes[objClassName]
+        return self.session.query(objClass).\
+            filter_by(id=objId).one()
       
-    def getAllObjects(self, objClass, parentId):
+    def getAllObjects(self, objClassName, parentId):
         '''Returns a list of all cateogies as ORM objects.
         @param session: SQL Alchemy session instance.
         '''
+        objClass = self.classes[objClassName]
         return self.session.query(objClass).filter_by(parent_id=parentId).\
-               order_by(objClass.name).all()
+               order_by(objClass.id).all()
+               
+    def getObjByName(self, objClassName, name, parentId):
+        '''Get the object with a given name associated with a specific parent.
+        Returns None if no object with that name is found.
+        '''
+        objClass = self.classes[objClassName]
+        return self.session.query(objClass).filter(\
+                                    and_(objClass.name == name, 
+                                         objClass.parent_id == parentId)).first()
             
-    def getUser(self):
-        pass
+    def getUserByEmail(self, email):
+        '''Get a user by their email address, will return None if no user is
+        found.
+        '''
+        return self.session.query(User).filter_by(email=email).first()
     
-    def adduser(self):
-        pass
+    def getAuthorizedPantries(self, user):
+        '''Return a list of the pantries this user has access to,
+        sorted by pantry id.
+        @param user: an instance of the mapped user object
+        '''
+        return sorted(user.children, key=lambda pantry: pantry.id)
+    
+    def addObject(self, className, *args):
+        '''Add an object to the database.
+        @param obj: the object to add
+        @param args: data for the columns of mapped class
+        '''
+        obj = self.classes[className](*args)
+        if className in self.parents:
+            parentClass = self.classes[self.parents[className]]
+            parent = self.session.query(parentClass)\
+                     .filter_by(id=obj.parent_id).one()
+            parent.children.append(obj)
+        self.session.add(obj)
+        
+    def delObject(self, obj):
+        '''Delete this object from the database and cascade to all children.
+        '''
+        self.session.delete(obj)
+        # relationship user---pantry is many to many so get owned pantries
+        # and delete them
+        if type(obj) is User:
+            child_pantries = filter(lambda pantry: pantry.parent_id == obj.id,
+                                    obj.children)
+            assert child_pantries is not None, "No child pantries found"
+            for child_pantry in child_pantries:
+                self.session.delete(child_pantry)
+    
+    
+    
+    
+    
+    
