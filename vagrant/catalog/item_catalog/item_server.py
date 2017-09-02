@@ -461,6 +461,23 @@ def buildJSONResponse(msg, response_code):
     response.headers['Content-Type'] = 'application/json'
     return response
 
+def checkUser():
+    '''Checks to see whether this user has used the app before. If not, 
+    is adds the user to the database.  The user's info comes directly from
+    the flask session, so it is an error to call this method when the
+    session is empty.
+    '''
+    db = getDB()
+    user = db.getUserByEmail(flask_session['email'])
+    if user is not None:
+        if user.name != flask_session['username']:
+            user.name = flask_session['username']
+    else:
+        user = db.addObject('User', flask_session['username'],
+                            flask_session['email'])
+        
+    
+
 # @app.route(GCONNECT, methods=['POST'])
 # def gconnect():
 #     '''Retrieve OAuth2 state token from client request and obtain 
