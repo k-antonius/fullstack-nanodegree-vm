@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- template variables: (1) owned_pantries, (2) user, (3) user_error,
+     (4) recipients[mapping, recipient to pantries shared with them],
+     (5) senders[mapping, sender to pantries shared with you]-->
+
+<table>
+  <form method="post">
+  <tr>
+    <td>Share your pantry:</td>
+  </tr>
+  <tr>
+    <td>Type the email of a user you want to find</td>
+    <td>
+      <input name="user_to_find" type="text"></input>
+    </td>
+    <td>{{user_error}}</td>
+    <td>
+      {% if not owned_pantries %}
+        You have no pantries to share.
+      {% else %}
+        <select>
+          {% for pantry in owned_pantries %}
+            <option value="{{pantry.id}}">{{pantry.name}}</option>
+          {% endfor %}
+        </select>
+      {% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <input type="submit"></input>
+    </td>
+  </tr>
+</table>
+<table>
+  <tr>
+    <td>
+      Pantries you have shared:
+    </td>
+  </tr>
+  {% if not recipients %}
+  <tr>
+    <td>You have not shared pantries with anyone.</td>
+  </tr>
+  {% else %}
+  <tr><td>
+    <ul>
+    {% for recipient in recipients %}
+      <li>{{recipient.name}}</li>
+      <ul>
+        {% for pantry in recipients[recipient] %}
+          <li>pantry.name</li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+    </ul>
+  <td></tr>
+    {% endif %}
+</table>
+<table>
+  <tr>
+    <td>
+      Pantries shared with you:
+    </td>
+  </tr>
+  {% if not senders %}
+  <tr>
+    <td>No on has shared pantries with you :-(</td>
+  </tr>
+  {% else %}
+  <tr><td>
+    <ul>
+    {% for sende in senders %}
+      <li>{{sender.name}}</li>
+      <ul>
+        {% for pantry in senders[sender] %}
+          <li>pantry.name</li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+    </ul>
+  <td></tr>
+    {% endif %}
+</table>
+
+
+{% endblock %}
