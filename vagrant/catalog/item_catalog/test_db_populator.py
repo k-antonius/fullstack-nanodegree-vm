@@ -72,6 +72,16 @@ class Item(object):
                 'price' : self.price,
                 'parent_id' : self.parent_id,
                 }
+        
+class ShareRequest(object):
+    def __init__(self, id, sender, recipient, viewed=False):
+        self.id = id
+        self.sender = sender
+        self.recipient = recipient
+        self.viewed = viewed
+    
+    def __repr__(self):
+        return self.sender + "-->" + self.recipient
 
 class MockDB(object):
 
@@ -105,12 +115,16 @@ class MockDB(object):
                       Item(6, 'cake', 'moist', 1, 15.0, 3),
                       Item(7, 'potato', 'high in carbs', 50, 0.20, 2)]
         
+        self.share_request = []
+        
         self.mock_db = {'User' : self.mock_users,
                         'Pantry' : self.pantries,
                         'Category' : self.categories,
-                        'Item' : self.items}
+                        'Item' : self.items,
+                        'ShareRequest' : self.share_request}
         
         self.constructor = {'User' : User,
                             'Pantry' : Pantry,
                             'Category' : Category,
-                            'Item' : Item}
+                            'Item' : Item,
+                            'ShareRequest' : ShareRequest}
