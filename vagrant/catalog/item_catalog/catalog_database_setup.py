@@ -4,7 +4,7 @@ Created on Jul 9, 2017
 @author: kennethalamantia
 '''
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Table
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
@@ -99,6 +99,19 @@ class Item(Base):
                 'parent_id' : self.parent_id,
                 'purchaser' : self.purchaser
                 }
+
+class ShareRequest(Base):
+    '''Table that stores the status of user requests to share pantries.
+    '''
+    __tablename__ = 'shareRequest'
+    id = Column(Integer, primary_key = True)
+    sender = Column(Integer, ForeignKey('users.id'))
+    recipient = Column(Integer, ForeignKey('users.id'))
+    viewed = Column(Boolean, create_constraint=False)
+    
+    def __init__(self, sender, recipient):
+        self.sender = sender
+        self.recipient = recipient
 
 
 def createDB(testing=False):
