@@ -107,7 +107,9 @@ class ShareRequest(Base):
     id = Column(Integer, primary_key = True)
     sender = Column(Integer, ForeignKey('users.id'))
     recipient = Column(Integer, ForeignKey('users.id'))
+    # pantry needs to be in here
     viewed = Column(Boolean(create_constraint=False))
+    accepted = Column(Boolean(create_constraint=False))
     
     def __init__(self, sender, recipient):
         self.sender = sender
