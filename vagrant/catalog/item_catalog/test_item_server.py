@@ -366,6 +366,24 @@ class TestServer(unittest.TestCase):
         self.setSession('A@aaa.com')
         r = self.setGetRequest('/pantry/1/category/1/item/1/json/')
         self.assertTrue('apple' and 'shiny and red' in r.data, r.data)
+        
+    def testShareControl1(self):
+        '''Test display share control information for User A
+        '''
+        # pantry 1 is shared with user B
+        # User B shared pantry 1 with User A
+        self.setSession('A@aaa.com')
+        r = self.setGetRequest('/share_control/')
+        self.assertTrue('Pantry_A' in r.data, r.data)
+        self.assertTrue('Pantry_B' in r.data, r.data)
+        self.assertTrue('B' in r.data, r.data, r.data)
+        self.assertTrue("<option value=\"4\">Pantry_D</option>" in r.data,
+                        r.data)
+        self.assertFalse("You have no pantries to share." in r.data, r.data)
+        self.assertFalse("You have not shared pantries with anyone." in r.data,
+                         r.data)
+        self.assertFalse("No on has shared pantries with you :-(" in r.data,
+                         r.data)
 
 class TestDatabase(unittest.TestCase):
     def setUp(self):
