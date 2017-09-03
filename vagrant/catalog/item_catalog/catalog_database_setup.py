@@ -107,7 +107,7 @@ class ShareRequest(Base):
     id = Column(Integer, primary_key = True)
     sender = Column(Integer, ForeignKey('users.id'))
     recipient = Column(Integer, ForeignKey('users.id'))
-    viewed = Column(Boolean, create_constraint=False)
+    viewed = Column(Boolean(create_constraint=False))
     
     def __init__(self, sender, recipient):
         self.sender = sender
