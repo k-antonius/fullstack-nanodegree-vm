@@ -99,6 +99,18 @@ class DBInterface(object):
         '''CRUD update on this database entity.
         '''
         self.db.updateObject(obj)
+        
+    def getSharesSent(self, user):
+        '''Get the shares this user has sent.
+        @param user: the user ORM object
+        '''
+        pass
+    
+    def getSharesReceived(self, user):
+        '''Get the shares this user has received.
+        @param user: the user ORM object
+        '''
+        pass
 
 
 class MockDBAccessor(object):
