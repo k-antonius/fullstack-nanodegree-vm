@@ -183,7 +183,8 @@ def home():
 def shareControl(**kwargs):
     '''Handle sharing of user pantries.
     '''
-    pass
+    db = getDB()
+    
 
 @app.route('/pantry/')
 @isLoggedIn
