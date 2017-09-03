@@ -39,6 +39,7 @@ JSON = 'json/'
 LOGIN = HOME + 'login/'
 LOGOUT = HOME + 'logout/'
 GCONNECT = '/gconnect'
+SHARE = '/share_control/'
 
 PANTRY = '/pantry/<int:pantry_id>/'
 EDIT_PANTRY = PANTRY + EDIT
@@ -63,8 +64,9 @@ ITEM_JSON = ITEM + JSON
 # templates
 
 # general
-LOGIN_TEMPLATE = "login.html"
-LOGOUT_TEMPALTE = "logout.html"
+LOGIN_TEMPLATE = "login.html" # MAKE THESE CONSISTENT
+LOGOUT_TEMPALTE = "logout.html" # AND THIS
+SHARE_TMPLT = "share_control.html"
 
 # pantry
 P_INDEX_TMPLT = "pantry_index.html"
@@ -172,6 +174,14 @@ def isAuthorized(fun):
 @app.route(HOME)
 def home():
     '''Displays the home page for users that are not logged in.
+    '''
+    pass
+
+
+@app.route(SHARE, methods=['GET', 'POST'])
+@isLoggedIn
+def shareControl(**kwargs):
+    '''Handle sharing of user pantries.
     '''
     pass
 
