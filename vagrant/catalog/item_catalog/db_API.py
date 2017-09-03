@@ -6,7 +6,8 @@ Created on Aug 7, 2017
 
 from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
-from catalog_database_setup import Base, Category, Item, Pantry, User
+from catalog_database_setup import Base, Category, Item, Pantry, User, \
+                            ShareRequest
 
 class DBInterface(object):
     '''This class acts as an interface to either an actual database for 
@@ -121,7 +122,8 @@ class MockDBAccessor(object):
                           
     def getObjByName(self, objClass, objName, objParentId):
         try:
-            return filter(lambda x: x.name == objName and x.parent_id == objParentId,
+            return filter(lambda x: x.name == objName and x.parent_id\
+                           == objParentId,
                           self.session.mock_db.get(objClass))[0]
         except IndexError:
             return None
@@ -188,7 +190,8 @@ class DBAccessor(object):
         self.classes = {'User' : User,
                         'Pantry' : Pantry,
                         'Category' : Category,
-                        'Item' : Item}
+                        'Item' : Item,
+                        'ShareRequest' : ShareRequest}
         # table allows retrieval of parent from only knowing child 
         self.parents = {'Item' : 'Category',
                         'Category' : 'Pantry',
@@ -218,7 +221,8 @@ class DBAccessor(object):
         objClass = self.classes[objClassName]
         return self.session.query(objClass).filter(\
                                     and_(objClass.name == name, 
-                                         objClass.parent_id == parentId)).first()
+                                         objClass.parent_id == parentId))\
+                                         .first()
             
     def getUserByEmail(self, email):
         '''Get a user by their email address, will return None if no user is
