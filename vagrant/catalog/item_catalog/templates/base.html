@@ -11,16 +11,13 @@
       <table>
       <tr>
         <td><a href="{{url_for('pantry_index')}}">Home</a></td>
+        {% if session and session.get('email') %}
         <td>
-          <form method="post" action="{{url_for('logout')}}">
+          <form method="post" action="{{url_for('gdisconnect')}}">
             <button>Logout</button>
           </form>
         </td>
-        <td>
-          <form method="post" action="{{url_for('gdisconnect')}}">
-            <button>Disconnect Google Login</button>
-          </form>
-        </td>
+        {% endif %}
       </tr>
       <tr>
         <td>{% with messages = get_flashed_messages() %}
