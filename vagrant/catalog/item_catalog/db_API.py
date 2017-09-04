@@ -18,7 +18,8 @@ direct child.
 
 from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
-from catalog_database_setup import Base, Category, Item, Pantry, User
+from item_catalog.catalog_database_setup import Base, Category, Item, Pantry, \
+                                                User
 
 class DBInterface(object):
     '''This class acts as an interface to either an actual database for 
@@ -26,7 +27,7 @@ class DBInterface(object):
     in memory python data structures. 
     '''
     @classmethod
-    def makeSessionFactory(cls, testing=False):
+    def make_session_factory(cls, testing=False):
         '''Create a SQL Alchemy session factory. This is not used in the 
         initializer because there is no need to re-create the factory object
         every time an instance of this class is created.
@@ -37,7 +38,7 @@ class DBInterface(object):
             engine = create_engine('sqlite:///item_catalog.db')
         Base.metadata.bind = engine
         return sessionmaker(bind=engine)
-    
+
     def __init__(self, session, testing=False):
         '''If testing is true, will use the mock database implementation, 
         otherwise uses SQL Alchemy queries. 
@@ -50,72 +51,72 @@ class DBInterface(object):
             self.db = MockDBAccessor(session)
         else:
             self.db = DBAccessor(session)
-            
+
     def _commit(self):
         '''For testing only. Commits changes to the database.
         '''
         self.db.session.commit()
-        
+
     def _close(self):
         '''For testing only. Closes the session.
         '''
         self.db.session.close()
-    
-    def getDBObjectById(self, objClass, objId):
+
+    def get_db_object_by_id(self, obj_class, obj_id):
         '''Get single database object based on its ID.
-        @param objClass: string class name of the model
-        @param objId: int id of the model
+        @param obj_class: string class name of the model
+        @param obj_id: int id of the model
         '''
-        return self.db.getObj(objClass, objId)
-    
-    def getAllObjects(self, objClass, parentId):
+        return self.db.get_obj(obj_class, obj_id)
+
+    def get_all_objects(self, obj_class, parent_id):
         '''Get all objets of given class. If superID is supplied,
         only objects directly related to superId will be returned.
-        @param objClass: string class name of the model
-        @param parentId: int id of the parent 
+        @param obj_class: string class name of the model
+        @param parent_id: int id of the parent 
         '''
-        return self.db.getAllObjects(objClass, parentId)
-    
-    def getDBObjectByName(self, objClass, name, parentId):
+        return self.db.get_all_objects(obj_class, parent_id)
+
+    def get_dbobject_by_name(self, obj_class, name, parent_id):
         '''Return any objects matching this query as a list.
-        @param objClass: the Mapped class
+        @param obj_class: the Mapped class
         @param name: string name of this object
-        @param parentId: the id of this object's pantry 
+        @param parent_id: the id of this object's pantry 
         '''
-        return self.db.getObjByName(objClass, name, parentId)
-    
-    def getUserByEmail(self, email):
+        return self.db.get_obj_by_name(obj_class, name, parent_id)
+
+    def get_user_by_email(self, email):
         '''Return the user matching the email address if any.
         @param email: an email address as a string
         '''
-        return self.db.getUserByEmail(email)
-    
-    def getAuthorizedPantries(self, user):
+        return self.db.get_user_by_email(email)
+
+    def get_authorized_pantries(self, user):
         '''Return a list of users authorized to access a pantry
         @param user: the accessing user ORM object.
         '''
-        return self.db.getAuthorizedPantries(user)
-    
-    def addObject(self, className, *args):
+        return self.db.get_authorized_pantries(user)
+
+    def add_object(self, class_name, *args):
         '''Add an object to the database. 
-        @param className: the name of the class the new object is to be
+        @param class_name: the name of the class the new object is to be
         an instance of
         @param args: values to populate the fields of the model class
         '''
-        self.db.addObject(className, *args)
-        
-        
-    def delObject(self, obj):
+        self.db.add_object(class_name, *args)
+
+
+    def del_object(self, obj):
         '''CRUD delete this entity from the database.
         @param obj: the object to be deleted
         '''
-        self.db.delObject(obj) 
-        
-    def updateObject(self, obj):
+        self.db.del_object(obj)
+
+    def update_object(self, obj):
         '''CRUD update on this database entity.
         @param obj: the object to be deleted
         '''
-        self.db.updateObject(obj)
+        self.db.update_object(obj)
 
 
 class MockDBAccessor(object):
@@ -138,109 +139,109 @@ class MockDBAccessor(object):
         @param session: an instance of MockDB from test_db_populator
         '''
         self.session = session
-    
-    def getUserByEmail(self, email):
+
+    def get_user_by_email(self, email):
         '''Get user object by email address.
         @param email: string email address
         @return: the user model object or None if not found
         '''
         try:
-            return filter(lambda x: x.email == email, 
+            return filter(lambda x: x.email == email,
                           self.session.mock_db.get("User"))[0]
         except IndexError:
             return None
-        
-    def getObj(self, objClass, objId):
+
+    def get_obj(self, obj_class, obj_id):
         '''Get a model object by class name and id.
-        @param objClass: string name of the model
-        @param objId: the int id of the model object
+        @param obj_class: string name of the model
+        @param obj_id: the int id of the model object
         @return: model object instance or None if not found
         '''
         try:
-            return filter(lambda x: x.id == objId,
-                          self.session.mock_db.get(objClass))[0]
+            return filter(lambda x: x.id == obj_id,
+                          self.session.mock_db.get(obj_class))[0]
         except IndexError:
             return None
-            
-                          
-    def getObjByName(self, objClass, objName, objParentId):
+
+
+    def get_obj_by_name(self, obj_class, obj_name, obj_parent_id):
         '''Get a model object by its name field.
-        @param objClass: model class name
-        @param objName: name of individual model object
-        @param objParentId: int id of the parent
+        @param obj_class: model class name
+        @param obj_name: name of individual model object
+        @param obj_parent_id: int id of the parent
         @return: model object instance or None if not found
         '''
         try:
-            return filter(lambda x: x.name == objName and x.parent_id\
-                           == objParentId,
-                          self.session.mock_db.get(objClass))[0]
+            return filter(lambda x: x.name == obj_name and x.parent_id\
+                           == obj_parent_id,
+                          self.session.mock_db.get(obj_class))[0]
         except IndexError:
             return None
-    
-    def getAllObjects(self, objClass, parentId):
+
+    def get_all_objects(self, obj_class, parent_id):
         '''Returns a list of all object of a specific mapped class in
         the table with a given parent relationship.
-        @param objClass: model class name
-        @param parentId: int id of the parent
+        @param obj_class: model class name
+        @param parent_id: int id of the parent
         '''
-        return filter(lambda x: x.parent_id == parentId, 
-                      self.session.mock_db.get(objClass))
-        
-    def getAuthorizedPantries(self, user):
+        return filter(lambda x: x.parent_id == parent_id,
+                      self.session.mock_db.get(obj_class))
+
+    def get_authorized_pantries(self, user):
         '''Return a list of pantry objects this user can access.
         @param user: the user to check.
         '''
         return filter(lambda x: x.id in user.pantries, self.session.pantries)
-        
-    def addObject(self, className, *args):
+
+    def add_object(self, class_name, *args):
         '''Add an object to the database. 
-        @param className: the name of the class the new object is to be
+        @param class_name: the name of the class the new object is to be
         an instance of
         @param args: values to populate the fields of the model class
         '''
-        mockTable = self.session.mock_db.get(className)
+        mock_table = self.session.mock_db.get(class_name)
         # get the constructor from the mock database --
         # the construtors are in a dict, would conflict with names of
         # mapped classes for ORM
-        constructor = self.session.constructor.get(className)
-        # make a new id for the object, assume it is going at the end of the 
+        constructor = self.session.constructor.get(class_name)
+        # make a new id for the object, assume it is going at the end of the
         # list (mock db lists are ordered by id)
-        new_id = mockTable[len(mockTable)-1].id + 1
-        argsWithId = list(args)
-        argsWithId.insert(0, new_id)
-        newObj = constructor(*argsWithId)
-        newObj.id = new_id
-        mockTable.append(newObj)
+        new_id = mock_table[len(mock_table) - 1].id + 1
+        args_with_id = list(args)
+        args_with_id.insert(0, new_id)
+        new_obj = constructor(*args_with_id)
+        new_obj.id = new_id
+        mock_table.append(new_obj)
         # if it is a pantry need to update user pantry access id reference
-        if className == 'Pantry':
-            user = filter(lambda x:x.id == newObj.parent_id,
+        if class_name == 'Pantry':
+            user = filter(lambda x:x.id == new_obj.parent_id,
                           self.session.mock_db.get('User'))
-            user[0].pantries.append(newObj.id)
-    
-    def delObject(self, obj):
+            user[0].pantries.append(new_obj.id)
+
+    def del_object(self, obj):
         '''Delete an object from the mock database.
         @param obj: model object to delete
         '''
-        mockTable = self.session.mock_db.get(obj.__class__.__name__)
-        mockTable.remove(obj)
-        
-        
-    def updateObject(self, obj):
+        mock_table = self.session.mock_db.get(obj.__class__.__name__)
+        mock_table.remove(obj)
+
+
+    def update_object(self, obj):
         '''Update an existing entry in the mock table. Does not actually 
         do anything because the object's properties will already be updated
         in the handler. Throws an exception if the object is not in the 
         list.
         '''
-        mockTable = self.session.mock_db.get(obj.__class__.__name__)
-        assert obj in mockTable
+        mock_table = self.session.mock_db.get(obj.__class__.__name__)
+        assert obj in mock_table
 
 class DBAccessor(object):
     '''Provides access to the database as necessary.
     Serves as a mid-layer between the ORM and view functions. See module and
     DBInterface documentation for more details. This class should only be 
     instantiated in the DBInterface class. 
-    ''' 
-     
+    '''
+
     def __init__(self, session):
         '''Should only be called in DBInterface class.
         @param session: SQLAlchemy session instance.
@@ -255,65 +256,65 @@ class DBAccessor(object):
                         'Pantry' : Pantry,
                         'Category' : Category,
                         'Item' : Item}
-        # table allows retrieval of parent from only knowing child 
+        # table allows retrieval of parent from only knowing child
         self.parents = {'Item' : 'Category',
                         'Category' : 'Pantry',
                         'Pantry' : 'User'}
-      
-    def getObj(self, objClassName, objId):
+
+    def get_obj(self, obj_class_name, obj_id):
         '''Returns an ORM object. Raise an exception if more than one is found.
-        @param objClassName: ORM table class, as a string
-        @param objId: integer id of the object to query for
+        @param obj_class_name: ORM table class, as a string
+        @param obj_id: integer id of the object to query for
         '''
-        objClass = self.classes[objClassName]
-        return self.session.query(objClass).\
-            filter_by(id=objId).one()
-      
-    def getAllObjects(self, objClassName, parentId):
+        obj_class = self.classes[obj_class_name]
+        return self.session.query(obj_class).\
+            filter_by(id=obj_id).one()
+
+    def get_all_objects(self, obj_class_name, parent_id):
         '''Returns a list of all cateogies as ORM objects.
         @param session: SQL Alchemy session instance.
         '''
-        objClass = self.classes[objClassName]
-        return self.session.query(objClass).filter_by(parent_id=parentId).\
-               order_by(objClass.id).all()
-               
-    def getObjByName(self, objClassName, name, parentId):
+        obj_class = self.classes[obj_class_name]
+        return self.session.query(obj_class).filter_by(parent_id=parent_id).\
+               order_by(obj_class.id).all()
+
+    def get_obj_by_name(self, obj_class_name, name, parent_id):
         '''Get the object with a given name associated with a specific parent.
         Returns None if no object with that name is found.
         '''
-        objClass = self.classes[objClassName]
-        return self.session.query(objClass).filter(\
-                                    and_(objClass.name == name, 
-                                         objClass.parent_id == parentId))\
+        obj_class = self.classes[obj_class_name]
+        return self.session.query(obj_class).filter(\
+                                    and_(obj_class.name == name,
+                                         obj_class.parent_id == parent_id))\
                                          .first()
-            
-    def getUserByEmail(self, email):
+
+    def get_user_by_email(self, email):
         '''Get a user by their email address, will return None if no user is
         found.
         '''
         return self.session.query(User).filter_by(email=email).first()
-    
-    def getAuthorizedPantries(self, user):
+
+    def get_authorized_pantries(self, user):
         '''Return a list of the pantries this user has access to,
         sorted by pantry id.
         @param user: an instance of the mapped user object
         '''
         return sorted(user.children, key=lambda pantry: pantry.id)
-    
-    def addObject(self, className, *args):
+
+    def add_object(self, class_name, *args):
         '''Add an object to the database.
         @param obj: the object to add
         @param args: data for the columns of mapped class
         '''
-        obj = self.classes[className](*args)
-        if className in self.parents:
-            parentClass = self.classes[self.parents[className]]
-            parent = self.session.query(parentClass)\
+        obj = self.classes[class_name](*args)
+        if class_name in self.parents:
+            parent_class = self.classes[self.parents[class_name]]
+            parent = self.session.query(parent_class)\
                      .filter_by(id=obj.parent_id).one()
             parent.children.append(obj)
         self.session.add(obj)
-        
-    def delObject(self, obj):
+
+    def del_object(self, obj):
         '''Delete this object from the database and cascade to all children.
         '''
         self.session.delete(obj)
@@ -325,9 +326,3 @@ class DBAccessor(object):
             assert child_pantries is not None, "No child pantries found"
             for child_pantry in child_pantries:
                 self.session.delete(child_pantry)
-    
-    
-    
-    
-    
-    
