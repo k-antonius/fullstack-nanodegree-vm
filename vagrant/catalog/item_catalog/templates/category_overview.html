@@ -9,14 +9,14 @@
 <div>
   <table>
     <tr>
-      <td><a href="{{url_for('addCategory', pantry_id=pantry_id)}}">Add Category</a></td>
+      <td><a href="{{url_for('add_category', pantry_id=pantry_id)}}">Add Category</a></td>
     </tr>
     {% for category in categories %}
     <tr>
       <td><h3>{{category.name}}</h3></td>
-      <td><a href="{{url_for('displayCategory', pantry_id=pantry_id, category_id=category.id)}}">View</a></td>
-      <td><a href="{{url_for('editCategory', pantry_id=pantry_id, category_id=category.id)}}">Edit</a></td>
-      <td><a href="{{url_for('delCategory', pantry_id=pantry_id, category_id=category.id)}}">Delete</a></td>
+      <td><a href="{{url_for('display_category', pantry_id=pantry_id, category_id=category.id)}}">View</a></td>
+      <td><a href="{{url_for('edit_category', pantry_id=pantry_id, category_id=category.id)}}">Edit</a></td>
+      <td><a href="{{url_for('del_category', pantry_id=pantry_id, category_id=category.id)}}">Delete</a></td>
     </tr>
     {% endfor %}
   </table>

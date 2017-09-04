@@ -8,12 +8,15 @@
 </div>
 <div>
   <table>
+    <tr>
+      <td><a href="{{url_for('add_pantry')}}">Add Pantry</a></td>
+    </tr>
     {% for pantry in pantries %}
     <tr>
       <td><h3>{{pantry.name}}</h3></td>
-      <td><a href="{{url_for('categoryIndex', pantry_id=pantry.id)}}">View</a></td>
-      <td><a href="{{url_for('editPantry', pantry_id=pantry.id)}}">Edit</a></td>
-      <td><a href="{{url_for('delPantry', pantry_id=pantry.id)}}">Delete</a></td>
+      <td><a href="{{url_for('category_index', pantry_id=pantry.id)}}">View</a></td>
+      <td><a href="{{url_for('edit_pantry', pantry_id=pantry.id)}}">Edit</a></td>
+      <td><a href="{{url_for('del_pantry', pantry_id=pantry.id)}}">Delete</a></td>
     </tr>
     {% endfor %}
   </table>

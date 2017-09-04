@@ -8,11 +8,17 @@
   <body>
     <div id="main_title"><h1>Your Kitchen Pantry</h1></div>
     <div id="main_title_nav_bar">
+      <table>
       <tr>
-        <td><a href="{{url_for('home')}}">Home</a></td>
+        <td><a href="{{url_for('pantry_index')}}">Home</a></td>
+        <td>
+          <form method="post" action="{{url_for('logout')}}">
+            <button>Logout</button>
+          </form>
+        </td>
         <td>
           <form method="post" action="{{url_for('gdisconnect')}}">
-            <button>Logout</button>
+            <button>Disconnect Google Login</button>
           </form>
         </td>
       </tr>
@@ -26,6 +32,7 @@
             {% endwith %}
         </td>
       </tr>
+    </table>
     </div>
     {% block content %}
     {% endblock %}
