@@ -86,7 +86,7 @@ I_DEL_TMPLT = "del_item.html"
 I_EDIT_TMPLT = "edit_item.html"
 
 # SQL Alchemy Globals
-session_maker = DBInterface.makeSessionFactory()
+session_maker = DBInterface.make_session_factory()
 
 def get_db_api():
     '''Creates a new SQL Alchemy session from the global sessionmaker
@@ -130,7 +130,7 @@ def is_logged_in(fun):
         user_email = flask_session.get('email')
         if user_email is not None:
             db_api = get_db_api()
-            user = db_api.getUserByEmail(user_email)
+            user = db_api.get_user_by_email(user_email)
             if user is not None:
                 kwargs['user'] = user
                 return fun(*args, **kwargs)
@@ -150,12 +150,12 @@ def is_authorized(fun):
         user_email = flask_session.get('email')
         if user_email is not None:
             db_api = get_db_api()
-            user = db_api.getUserByEmail(user_email)
+            user = db_api.get_user_by_email(user_email)
             if user is not None:
                 pantry_id = kwargs.get('pantry_id')
                 assert pantry_id, "This function requires a pantry id."
-                pantry = db_api.getDBObjectById('Pantry', pantry_id)
-                if pantry in db_api.getAuthorizedPantries(user):
+                pantry = db_api.get_db_object_by_id('Pantry', pantry_id)
+                if pantry in db_api.get_authorized_pantries(user):
                     kwargs['user'] = user
                     return fun(*args, **kwargs)
                 else:
@@ -181,7 +181,7 @@ def pantry_index(user, **kwargs):
     '''Displays all pantrys for a given user.
     '''
     db_api = get_db_api()
-    all_pantries = db_api.getAuthorizedPantries(user)
+    all_pantries = db_api.get_authorized_pantries(user)
     return render_template(P_INDEX_TMPLT,
                            pantries=all_pantries)
 
@@ -194,13 +194,13 @@ def add_pantry(user, **kwargs):
     if request.method == 'POST':
         name = request.form['new_pantry_name']
         if name:
-            duplicate = db_api.getDBObjectByName('Pantry', name, user.id)
+            duplicate = db_api.get_dbobject_by_name('Pantry', name, user.id)
             if duplicate:
                 return render_template(P_ADD_TMPLT,
                                        form_error='You already have a pantry' \
                                        ' with that name.' \
                                        ' Please choose another.')
-            db_api.addObject('Pantry', name, user.id)
+            db_api.add_object('Pantry', name, user.id)
             return redirect(url_for('pantry_index'))
         else:
             return render_template(P_ADD_TMPLT,
@@ -215,10 +215,10 @@ def del_pantry(user, pantry_id, **kwargs):
     '''Delete a pantry
     '''
     db_api = get_db_api()
-    this_pantry = db_api.getDBObjectById('Pantry', user.id)
-    all_categories = db_api.getAllObjects('Category', pantry_id)
+    this_pantry = db_api.get_db_object_by_id('Pantry', user.id)
+    all_categories = db_api.get_all_objects('Category', pantry_id)
     if request.method == 'POST' and request.form['confirm_del']:
-        db_api.delObject(this_pantry)
+        db_api.del_object(this_pantry)
         return redirect(url_for('pantry_index'))
     else:
         return render_template(P_DEL_TMPLT,
@@ -232,7 +232,7 @@ def edit_pantry(user, pantry_id, **kwargs):
     '''Edit a pantry.
     '''
     db_api = get_db_api()
-    this_pantry = db_api.getDBObjectById('Pantry', pantry_id)
+    this_pantry = db_api.get_db_object_by_id('Pantry', pantry_id)
     if request.method == 'POST':
         edited_name = request.form.get('updated_name')
         if edited_name:
@@ -252,7 +252,7 @@ def get_pantries_json(user, **kwargs):
     '''Display JSON for this user's pantries. Does not display shared pantries.
     '''
     db_api = get_db_api()
-    all_pantries = db_api.getAllObjects("Pantry", user.id)
+    all_pantries = db_api.get_all_objects("Pantry", user.id)
     return jsonify(all_pantries=[pantry.serialize for pantry in all_pantries])
 
 
@@ -262,7 +262,7 @@ def category_index(pantry_id, **kwargs):
     '''Display the category index page.
     '''
     db_api = get_db_api()
-    all_categories = db_api.getAllObjects('Category', pantry_id)
+    all_categories = db_api.get_all_objects('Category', pantry_id)
     return render_template(C_INDEX_TMPLT,
                            categories=all_categories,
                            pantry_id=pantry_id)
@@ -273,7 +273,7 @@ def get_categories_json(pantry_id, **kwargs):
     '''Provides a JSON representation of the current categories in the pantry.
     '''
     db_api = get_db_api()
-    all_categories = db_api.getAllObjects('Category', pantry_id)
+    all_categories = db_api.get_all_objects('Category', pantry_id)
     return jsonify(all_categories=[category.serialize for category
                                    in all_categories])
 @app.route(CATEGORY)
@@ -282,8 +282,8 @@ def display_category(pantry_id, category_id, **kwargs):
     '''Display individual category page.
     '''
     db_api = get_db_api()
-    this_category = db_api.getDBObjectById('Category', category_id)
-    all_items = db_api.getAllObjects('Item', category_id)
+    this_category = db_api.get_db_object_by_id('Category', category_id)
+    all_items = db_api.get_all_objects('Item', category_id)
     return render_template(C_DISP_TMPLT, category=this_category, items=all_items,
                            pantry_id=pantry_id)
 @app.route(CATEGORY_JSON)
@@ -292,7 +292,7 @@ def get_category_json(pantry_id, category_id, **kwargs):
     '''Return JSON for individual category.
     '''
     db_api = get_db_api()
-    all_items = db_api.getAllObjects('Item', category_id)
+    all_items = db_api.get_all_objects('Item', category_id)
     return jsonify(all_items=[item.serialize for item in all_items])
 
 @app.route(EDIT_CATEGORY, methods=['GET', 'POST'])
@@ -301,7 +301,7 @@ def edit_category(pantry_id, category_id, **kwargs):
     '''Edit a category entry.
     '''
     db_api = get_db_api()
-    this_category = db_api.getDBObjectById('Category', category_id)
+    this_category = db_api.get_db_object_by_id('Category', category_id)
     if request.method == "POST":
         if request.form["updated_name"]:
             this_category.name = request.form["updated_name"]
@@ -320,10 +320,10 @@ def del_category(pantry_id, category_id, **kwargs):
     '''Delete a category.
     '''
     db_api = get_db_api()
-    this_category = db_api.getDBObjectById('Category', category_id)
-    all_items = db_api.getAllObjects('Item', category_id)
+    this_category = db_api.get_db_object_by_id('Category', category_id)
+    all_items = db_api.get_all_objects('Item', category_id)
     if request.method == 'POST' and request.form['confirm_del']:
-        db_api.delObject(this_category)
+        db_api.del_object(this_category)
         return redirect(url_for('category_index', pantry_id=pantry_id))
     else:
         return render_template(C_DEL_TMPLT,
@@ -340,12 +340,12 @@ def add_category(pantry_id, **kwargs):
     if request.method == 'POST':
         name = request.form['new_category_name']
         if name:
-            duplicate = db.getDBObjectByName('Category', name, pantry_id)
+            duplicate = db.get_dbobject_by_name('Category', name, pantry_id)
             if duplicate:
                 return render_template(C_ADD_TMPLT,
                                        form_error="That category already" \
                                        + " exists.")
-            db.addObject('Category', name, pantry_id)
+            db.add_object('Category', name, pantry_id)
             return redirect(url_for('category_index', pantry_id=pantry_id))
         else:
             return render_template(C_ADD_TMPLT,
@@ -359,8 +359,8 @@ def display_item(pantry_id, category_id, item_id, **kwargs):
     '''Display an item.
     '''
     db_api = get_db_api()
-    this_category = db_api.getDBObjectById('Category', category_id)
-    this_item = db_api.getDBObjectById('Item', item_id)
+    this_category = db_api.get_db_object_by_id('Category', category_id)
+    this_item = db_api.get_db_object_by_id('Item', item_id)
     return render_template(I_DISP_TMPLT,
                            pantry_id=pantry_id,
                            category=this_category, item=this_item)
@@ -371,7 +371,7 @@ def get_item_json(pantry_id, category_id, item_id, **kwargs):
     '''Return JSON for individual item.
     '''
     db_api = get_db_api()
-    this_item = db_api.getDBObjectById('Item', item_id)
+    this_item = db_api.get_db_object_by_id('Item', item_id)
     return jsonify(item_info=this_item.serialize)
 
 
@@ -381,10 +381,10 @@ def del_item(pantry_id, category_id, item_id, **kwargs):
     '''Delete an item.
     '''
     db_api = get_db_api()
-    this_category = db_api.getDBObjectById('Category', category_id)
-    this_item = db_api.getDBObjectById('Item', item_id)
+    this_category = db_api.get_db_object_by_id('Category', category_id)
+    this_item = db_api.get_db_object_by_id('Item', item_id)
     if request.method == 'POST' and request.form['confirm_del']:
-        db_api.delObject(this_item)
+        db_api.del_object(this_item)
         return redirect(url_for('display_category',
                                 pantry_id=pantry_id, category_id=category_id))
     else:
@@ -397,8 +397,8 @@ def edit_item(pantry_id, category_id, item_id, **kwargs):
     '''Edit an item.
     '''
     db_api = get_db_api()
-    this_category = db_api.getDBObjectById('Category', category_id)
-    this_item = db_api.getDBObjectById('Item', item_id)
+    this_category = db_api.get_db_object_by_id('Category', category_id)
+    this_item = db_api.get_db_object_by_id('Item', item_id)
     if request.method == 'POST':
         if request.form['item_name']:
             this_item.name = request.form['item_name']
@@ -427,7 +427,7 @@ def add_item(pantry_id, category_id, **kwargs):
     if request.method == 'POST':
         if request.form["new_item_name"]:
             db_api = get_db_api()
-            db_api.addObject('Item',
+            db_api.add_object('Item',
                          request.form["new_item_name"],
                          request.form["quantity"],
                          request.form["price"],
@@ -483,12 +483,12 @@ def checkUser():
     session is empty.
     '''
     db_api = get_db_api()
-    user = db_api.getUserByEmail(flask_session['email'])
+    user = db_api.get_user_by_email(flask_session['email'])
     if user is not None:
         if user.name != flask_session['username']:
             user.name = flask_session['username']
     else:
-        user = db_api.addObject('User', flask_session['username'],
+        user = db_api.add_object('User', flask_session['username'],
                             flask_session['email'])
 
 

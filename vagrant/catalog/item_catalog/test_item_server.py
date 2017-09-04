@@ -25,50 +25,50 @@ class TestMockDatabase(unittest.TestCase):
 
     def testReadMockDB(self):
         
-        self.assertEqual(self.db.getDBObjectById('Category', 1).name, 
+        self.assertEqual(self.db.get_db_object_by_id('Category', 1).name, 
                          'vegetables')
-        self.assertEqual(self.db.getDBObjectByName('Category', 'snacks', 2).name,
+        self.assertEqual(self.db.get_dbobject_by_name('Category', 'snacks', 2).name,
                          'snacks')
-        self.assertEqual(self.db.getDBObjectByName('Item','apple', 1).name, 
+        self.assertEqual(self.db.get_dbobject_by_name('Item','apple', 1).name, 
                          'apple')
         # categories in pantry 1
-        pantry1Categories = self.db.getAllObjects('Category', 1)
+        pantry1Categories = self.db.get_all_objects('Category', 1)
         self.assertListEqual(pantry1Categories, [self.mDB.categories[0],
                                                  self.mDB.categories[1],
                                                  self.mDB.categories[2]])
         # items in pantry 2, category 3
-        category3Items = self.db.getAllObjects('Item', 3)
+        category3Items = self.db.get_all_objects('Item', 3)
         self.assertListEqual(category3Items, [self.mDB.items[4], 
                                               self.mDB.items[5]])
         # check getting object that does not exist
-        self.assertEqual(self.db.getDBObjectById('Category', 17), None)
-        self.assertEqual(self.db.getUserByEmail('A@aaa.com').name, 'A')
+        self.assertEqual(self.db.get_db_object_by_id('Category', 17), None)
+        self.assertEqual(self.db.get_user_by_email('A@aaa.com').name, 'A')
         
     def testAdd(self):
         '''Test add operations on mock db
         '''
 #         new_item = Item(None, 'pear', 'pear-shaped', 1, 1.0, 1)
-        self.assertEqual(self.db.getDBObjectById('Item', 8), None)
-        self.db.addObject('Item', 'pear', 'pear-shaped', 1, 1.0, 1)
-        self.assertEqual(self.db.getDBObjectByName('Item', 'pear', 1).name, 
+        self.assertEqual(self.db.get_db_object_by_id('Item', 8), None)
+        self.db.add_object('Item', 'pear', 'pear-shaped', 1, 1.0, 1)
+        self.assertEqual(self.db.get_dbobject_by_name('Item', 'pear', 1).name, 
                          'pear')
-        self.assertEqual(self.db.getDBObjectById('Item', 8).id, 8)
+        self.assertEqual(self.db.get_db_object_by_id('Item', 8).id, 8)
         
     def testDelete(self):
         '''Test delete operations on mock db
         '''
-        to_delete = self.db.getDBObjectById('Item', 6)
-        self.db.delObject(to_delete)
-        self.assertEqual(self.db.getDBObjectById('Item', 6), None)
+        to_delete = self.db.get_db_object_by_id('Item', 6)
+        self.db.del_object(to_delete)
+        self.assertEqual(self.db.get_db_object_by_id('Item', 6), None)
         self.assertEqual(len(self.mDB.items), 6)
         
     # test editing
     def testEdit(self):
         '''test edit operations on mock db
         '''
-        to_edit = self.db.getDBObjectById('Category', 6)
+        to_edit = self.db.get_db_object_by_id('Category', 6)
         to_edit.name = "meats"
-        self.assertTrue(self.db.getDBObjectByName('Category', "meats", 2), 
+        self.assertTrue(self.db.get_dbobject_by_name('Category', "meats", 2), 
                         "update to meats failed")
 
 class TestServer(unittest.TestCase):
@@ -370,7 +370,7 @@ class TestDatabase(unittest.TestCase):
     def setUp(self):
         mock = Mock()
         mock.populate()
-        session_maker = DBInterface.makeSessionFactory(testing=True)
+        session_maker = DBInterface.make_session_factory(testing=True)
         session = session_maker()
         self.db = DBInterface(session)
     
@@ -381,7 +381,7 @@ class TestDatabase(unittest.TestCase):
         '''
         expected_0 = 'A'
         expected_1 = 'A@aaa.com'
-        user = self.db.getDBObjectById('User', 1)
+        user = self.db.get_db_object_by_id('User', 1)
         self.assertEqual(user.name, expected_0)
         self.assertEqual(user.email, expected_1)
     
@@ -389,14 +389,14 @@ class TestDatabase(unittest.TestCase):
         '''Test getting a specific pantry by id.
         '''
         expected_0 = 'Pantry_B'
-        pantry = self.db.getDBObjectById('Pantry', 2)
+        pantry = self.db.get_db_object_by_id('Pantry', 2)
         self.assertEqual(pantry.name, expected_0)
     
     def testGetCategoryById(self):
         '''Test getting a category by id.
         '''
         expected_0 = 'desserts'
-        category = self.db.getDBObjectById('Category', 3)
+        category = self.db.get_db_object_by_id('Category', 3)
         self.assertEqual(category.name, expected_0)
     
     def testGetItemById(self):
@@ -405,7 +405,7 @@ class TestDatabase(unittest.TestCase):
         expected_0 = 'steak'
         expected_1 = 'high in protein'
         expected_2 = 8
-        item = self.db.getDBObjectById('Item', 4)
+        item = self.db.get_db_object_by_id('Item', 4)
         self.assertEqual(item.name, expected_0)
         self.assertEqual(item.description, expected_1)
         self.assertEqual(item.parent_id, expected_2)
@@ -416,14 +416,14 @@ class TestDatabase(unittest.TestCase):
         '''Test getting all the pantries user A owns.
         '''
         expected = ['Pantry_A', 'Pantry_D']
-        pantryObjList = self.db.getAllObjects('Pantry', 1)
+        pantryObjList = self.db.get_all_objects('Pantry', 1)
         self.assertEqual(expected, [pantry.name for pantry in pantryObjList])
 
     def testGetAllCategories(self):
         '''Test getting all the categories associated with Pantry C
         '''
         expected = ['fruit', 'meat', 'drinks']
-        categoryObjList = self.db.getAllObjects('Category', 3)
+        categoryObjList = self.db.get_all_objects('Category', 3)
         self.assertEqual(expected, [category.name for category in \
                                     categoryObjList])      
     
@@ -431,7 +431,7 @@ class TestDatabase(unittest.TestCase):
         '''Test getting all items associated with category with id 1.
         '''
         expected = ['apple', 'broccoli']
-        itemObjList = self.db.getAllObjects('Item', 1)
+        itemObjList = self.db.get_all_objects('Item', 1)
         self.assertEqual(expected, [item.name for item in itemObjList])
         
     # Test get object by name, associated with a specific parent.
@@ -439,19 +439,19 @@ class TestDatabase(unittest.TestCase):
     def testGetPantryByName(self):
         '''Test getting Pantry_A by name.
         '''
-        pantryObj = self.db.getDBObjectByName('Pantry', 'Pantry_A', 1)
+        pantryObj = self.db.get_dbobject_by_name('Pantry', 'Pantry_A', 1)
         self.assertEqual('Pantry_A', pantryObj.name)
         
     def testGetCategoryByName(self):
         '''Test getting the snacks category by name from Pantry B
         '''
-        categoryObj = self.db.getDBObjectByName('Category', 'snacks', 2)
+        categoryObj = self.db.get_dbobject_by_name('Category', 'snacks', 2)
         self.assertEqual('snacks', categoryObj.name)
     
     def testgetItemByName(self):
         '''Test getting the seltzer item by name
         '''
-        itemObj = self.db.getDBObjectByName('Item', 'seltzer', 3)
+        itemObj = self.db.get_dbobject_by_name('Item', 'seltzer', 3)
         self.assertEqual('seltzer', itemObj.name)
     
     # Test get User by email (equivalent of name)
@@ -459,13 +459,13 @@ class TestDatabase(unittest.TestCase):
     def testGetUserByEmail1(self):
         '''Test getting user A by email
         '''
-        user = self.db.getUserByEmail('A@aaa.com')
+        user = self.db.get_user_by_email('A@aaa.com')
         self.assertEqual('A@aaa.com', user.email)
     
     def testGetUserByEmail2(self):
         '''Test getting user C by email.
         '''
-        user = self.db.getUserByEmail('C@ccc.com')
+        user = self.db.get_user_by_email('C@ccc.com')
         self.assertEqual('C@ccc.com', user.email)
     
     # Test getting all the pantries a user has access to, owned and shared
@@ -473,16 +473,16 @@ class TestDatabase(unittest.TestCase):
     def testAuthPantries1(self):
         '''Test getting the pantries user A can access.
         '''
-        user = self.db.getUserByEmail('A@aaa.com')
-        pantries = self.db.getAuthorizedPantries(user)
+        user = self.db.get_user_by_email('A@aaa.com')
+        pantries = self.db.get_authorized_pantries(user)
         self.assertEqual(['Pantry_A', 'Pantry_B', 'Pantry_D'],
                          [pantry.name for pantry in pantries])
     
     def testAuthPantries2(self):
         '''Test getting the pantries that user B can access.
         '''
-        user = self.db.getUserByEmail('B@bbb.com')
-        pantries = self.db.getAuthorizedPantries(user)
+        user = self.db.get_user_by_email('B@bbb.com')
+        pantries = self.db.get_authorized_pantries(user)
         self.assertEqual(['Pantry_B'], [pantry.name for pantry in pantries])
     
     # Test adding objects
@@ -490,114 +490,114 @@ class TestDatabase(unittest.TestCase):
     def testAddUser(self):
         '''Test adding User D to the database.
         '''
-        self.assertTrue(self.db.getUserByEmail('D@ddd.com') is None)
-        self.db.addObject('User', 'D', 'D@ddd.com')
+        self.assertTrue(self.db.get_user_by_email('D@ddd.com') is None)
+        self.db.add_object('User', 'D', 'D@ddd.com')
         self.db._commit()
-        user_D = self.db.getUserByEmail('D@ddd.com')
+        user_D = self.db.get_user_by_email('D@ddd.com')
         self.assertEqual(user_D.name, 'D')
         self.assertEqual(user_D.children, [])
         
     def testAddPantry(self):
         '''Test adding a pantry owned by User C.
         '''
-        self.assertEqual(self.db.getDBObjectByName('Pantry', 'Pantry_E', 3),
+        self.assertEqual(self.db.get_dbobject_by_name('Pantry', 'Pantry_E', 3),
                          None)
-        self.db.addObject('Pantry', 'Pantry_E', 3)
+        self.db.add_object('Pantry', 'Pantry_E', 3)
         self.db._commit()
-        actual = self.db.getDBObjectByName('Pantry', 'Pantry_E', 3)
+        actual = self.db.get_dbobject_by_name('Pantry', 'Pantry_E', 3)
         expected = 'Pantry_E'
         self.assertEqual(expected, actual.name)
-        user_c = self.db.getUserByEmail('C@ccc.com')
-        pantries = self.db.getAuthorizedPantries(user_c)
+        user_c = self.db.get_user_by_email('C@ccc.com')
+        pantries = self.db.get_authorized_pantries(user_c)
         self.assertTrue(actual in pantries, "Pantry was not added to "\
                         "user pantries list.")
         
     def testAddCategory(self):
         '''Test add category to Pantry B
         '''
-        self.assertEqual(self.db.getDBObjectByName('Category', 'fruit', 2),
+        self.assertEqual(self.db.get_dbobject_by_name('Category', 'fruit', 2),
                          None)
-        self.db.addObject('Category', 'fruit', 2)
+        self.db.add_object('Category', 'fruit', 2)
         self.db._commit()
-        actual = self.db.getDBObjectByName('Category', 'fruit', 2)
+        actual = self.db.get_dbobject_by_name('Category', 'fruit', 2)
         expected = 'fruit'
         self.assertEqual(actual.name, expected, 'fruit not in pantry' \
                          ' PantryB')
-        pantry_B = self.db.getDBObjectById('Pantry', 2)
+        pantry_B = self.db.get_db_object_by_id('Pantry', 2)
         self.assertTrue(actual in pantry_B.children)
         
     def testAddItem(self):
         '''Test adding an item to the vegetables category in pantry A.
         '''
-        self.assertEqual(self.db.getDBObjectByName('Item', 'grub', 1), None)
-        self.db.addObject('Item', 'grub', 'a great food', 3, 4, 1)
+        self.assertEqual(self.db.get_dbobject_by_name('Item', 'grub', 1), None)
+        self.db.add_object('Item', 'grub', 'a great food', 3, 4, 1)
         self.db._commit()
-        actual = self.db.getDBObjectByName('Item', 'grub', 1)
+        actual = self.db.get_dbobject_by_name('Item', 'grub', 1)
         expected = 'grub'
         self.assertEqual(actual.name, expected, 'grub item not in Pantry A.')
         self.assertEqual(actual.description, 'a great food')
         self.assertEqual(actual.quantity, 3)
         self.assertEqual(actual.price, 4)
-        vegetable_category = self.db.getDBObjectById('Category', 1)
+        vegetable_category = self.db.get_db_object_by_id('Category', 1)
         self.assertTrue(actual in vegetable_category.children)
     
     # Test deleting objects
     def testDelUserA(self):
         '''Test deleting user A. Make sure the delete cascades.
         '''
-        user_A = self.db.getUserByEmail('A@aaa.com')
-        user_B = self.db.getUserByEmail('B@bbb.com')
+        user_A = self.db.get_user_by_email('A@aaa.com')
+        user_B = self.db.get_user_by_email('B@bbb.com')
         self.assertTrue(user_A is not None, 'failed sanity check')
-        pantry_A = self.db.getDBObjectByName('Pantry', 'Pantry_A', 1)
-        pantry_B = self.db.getDBObjectByName('Pantry', 'Pantry_B', 2)
+        pantry_A = self.db.get_dbobject_by_name('Pantry', 'Pantry_A', 1)
+        pantry_B = self.db.get_dbobject_by_name('Pantry', 'Pantry_B', 2)
         self.assertTrue(pantry_B is \
                         not None, 'failed sanity check')
         self.assertTrue(user_B in pantry_B.users, 'failed sanity check')
         self.assertTrue((pantry_A in user_A.children, 'Pantry A not in '\
                          'children list for User A.'))
-        self.db.delObject(user_A)
+        self.db.del_object(user_A)
         self.db._commit()
-        no_user = self.db.getUserByEmail('A@aaa.com')
+        no_user = self.db.get_user_by_email('A@aaa.com')
         self.assertTrue(no_user is None, 'failed to delete user')
         # test cascading
-        self.assertTrue(self.db.getDBObjectByName('Pantry', 'Pantry_A', 1) is \
+        self.assertTrue(self.db.get_dbobject_by_name('Pantry', 'Pantry_A', 1) is \
                         None)
-        self.assertTrue(self.db.getDBObjectByName('Pantry', 'Pantry_B', 2) is \
+        self.assertTrue(self.db.get_dbobject_by_name('Pantry', 'Pantry_B', 2) is \
                         not None, 'Pantry B, which was only shared with user' \
                         ' A should not have been deleted.')
-        pantry_D = self.db.getDBObjectByName('Pantry', 'Pantry_D', 1)
+        pantry_D = self.db.get_dbobject_by_name('Pantry', 'Pantry_D', 1)
         self.assertTrue(pantry_D is None)
         
     def testDelPantry(self):
         '''Test deleting Pantry B. Make sure the deletion cascades.
         '''
         # sanity checks
-        pantry_B = self.db.getDBObjectById('Pantry', 2)
+        pantry_B = self.db.get_db_object_by_id('Pantry', 2)
         self.assertTrue(len(pantry_B.children) == 3, 'failed sanity check')
-        self.db.delObject(pantry_B)
+        self.db.del_object(pantry_B)
         self.db._commit()
-        pantry_B = self.db.getDBObjectByName('Pantry', 'Pantry_B', 2)
+        pantry_B = self.db.get_dbobject_by_name('Pantry', 'Pantry_B', 2)
         self.assertEquals(pantry_B, None)
-        self.assertEquals(self.db.getDBObjectByName('Item', 'chips', 5), None)
-        self.assertEquals(self.db.getDBObjectByName('Category', 'veggies', 2),
+        self.assertEquals(self.db.get_dbobject_by_name('Item', 'chips', 5), None)
+        self.assertEquals(self.db.get_dbobject_by_name('Category', 'veggies', 2),
                           None)
         
     def testDelCategory(self):
         '''Test deleting fuit category from Pantry C
         '''
-        fruit = self.db.getDBObjectByName('Category', 'fruit', 3)
+        fruit = self.db.get_dbobject_by_name('Category', 'fruit', 3)
         self.assertTrue(fruit is not None, 'failed sanity check')
         self.assertTrue(fruit.children[0].name == 'apple', 
                         'failed sanity check')
-        pantry_c = self.db.getDBObjectById('Pantry', 3)
+        pantry_c = self.db.get_db_object_by_id('Pantry', 3)
         len_before = len(pantry_c.children)
-        self.db.delObject(fruit)
+        self.db.del_object(fruit)
         self.db._commit()
-        noFruit = self.db.getDBObjectByName('Category', 'fruit', 3)
+        noFruit = self.db.get_dbobject_by_name('Category', 'fruit', 3)
         self.assertTrue(noFruit is None, 'fruit not deleted')
         self.assertEquals(None,
-                          self.db.getDBObjectByName('Item', "apple", 7))
-        len_after = len(self.db.getDBObjectById('Pantry', 3).children)
+                          self.db.get_dbobject_by_name('Item', "apple", 7))
+        len_after = len(self.db.get_db_object_by_id('Pantry', 3).children)
         self.assertNotEqual(len_before, len_after,
                             'len before was {0} and len after was {1}'\
                             .format(len_before, len_after))
@@ -605,14 +605,14 @@ class TestDatabase(unittest.TestCase):
     def testDelItem(self):
         '''Test deleting apple item from pantry A
         '''
-        apple = self.db.getDBObjectByName('Item', 'apple', 1)
+        apple = self.db.get_dbobject_by_name('Item', 'apple', 1)
         self.assertIsNotNone(apple, 'failed sanity check')
-        len_before = len(self.db.getDBObjectById('Category', 1).children)
-        self.db.delObject(apple)
+        len_before = len(self.db.get_db_object_by_id('Category', 1).children)
+        self.db.del_object(apple)
         self.db._commit()
-        noApple = self.db.getDBObjectByName('Item', 'apple', 1)
+        noApple = self.db.get_dbobject_by_name('Item', 'apple', 1)
         self.assertIsNone(noApple, 'apple failed to delete')
-        len_after = len(self.db.getDBObjectById('Category', 1).children)
+        len_after = len(self.db.get_db_object_by_id('Category', 1).children)
         self.assertNotEqual(len_before, len_after,
                             'len before was {0} and len after was {1}'\
                             .format(len_before, len_after))
