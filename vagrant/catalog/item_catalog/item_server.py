@@ -205,7 +205,8 @@ def addPantry(user, **kwargs):
         else:
             return render_template(P_ADD_TMPLT,
                                    form_error="The name can't be blank.")
-    else: render_template(P_ADD_TMPLT)
+    else: 
+        return render_template(P_ADD_TMPLT)
 
 
 @app.route(DEL_PANTRY, methods=['GET', 'POST'])
