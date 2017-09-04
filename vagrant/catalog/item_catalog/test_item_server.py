@@ -3,10 +3,9 @@ Created on Aug 5, 2017
 
 @author: kennethalamantia
 '''
-import os
 import item_server
 import unittest
-from test_db_populator import User, Category, Pantry, Item, MockDB
+from test_db_populator import MockDB
 from db_API import DBInterface
 from actual_db_populator import MockDB as Mock
 
@@ -617,27 +616,6 @@ class TestDatabase(unittest.TestCase):
         self.assertNotEqual(len_before, len_after,
                             'len before was {0} and len after was {1}'\
                             .format(len_before, len_after))
-
-    # Test updating objects
-    def testUpdateUser(self):
-        '''Test updating user A attributes.
-        '''
-        pass
-        
-    def testUpdatePantry(self):
-        '''Test updating pantry B attributes.
-        '''
-        pass
-        
-    def testUpdateCategory(self):
-        '''
-        '''
-        pass
-    
-    def testUpdateItem(self):
-        '''
-        '''
-        pass
     
     def teardown(self):
         self.db._close()
