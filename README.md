@@ -1,4 +1,4 @@
-Kitchen Pantry App
+Kitchen Pantry App:
 Track your food so things don't get lost in your pantry.
 =============
 To run this application (TLDR):
