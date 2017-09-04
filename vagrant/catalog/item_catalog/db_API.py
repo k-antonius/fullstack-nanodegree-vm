@@ -47,6 +47,7 @@ class DBInterface(object):
     def _close(self):
         '''For testing only. Closes the session.
         '''
+        self.db.session.close()
     
     def getDBObjectById(self, objClass, objId):
         '''Get single database object based on its ID.
@@ -121,7 +122,8 @@ class MockDBAccessor(object):
                           
     def getObjByName(self, objClass, objName, objParentId):
         try:
-            return filter(lambda x: x.name == objName and x.parent_id == objParentId,
+            return filter(lambda x: x.name == objName and x.parent_id\
+                           == objParentId,
                           self.session.mock_db.get(objClass))[0]
         except IndexError:
             return None
@@ -218,7 +220,8 @@ class DBAccessor(object):
         objClass = self.classes[objClassName]
         return self.session.query(objClass).filter(\
                                     and_(objClass.name == name, 
-                                         objClass.parent_id == parentId)).first()
+                                         objClass.parent_id == parentId))\
+                                         .first()
             
     def getUserByEmail(self, email):
         '''Get a user by their email address, will return None if no user is
