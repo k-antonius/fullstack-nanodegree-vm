@@ -8,8 +8,8 @@ from functools import wraps
 from flask import Flask, url_for, render_template, g, request, redirect, \
 abort, jsonify, session as flask_session, make_response, flash
 
-# from oauth2client.client import flow_from_clientsecrets
-# from oauth2client.client import FlowExchangeError
+from oauth2client.client import flow_from_clientsecrets
+from oauth2client.client import FlowExchangeError
 import httplib2
 import json
 import requests
@@ -478,68 +478,69 @@ def checkUser():
                             flask_session['email'])
     
 
-# @app.route(GCONNECT, methods=['POST'])
-# def gconnect():
-#     '''Retrieve OAuth2 state token from client request and obtain 
-#     authorization code from Google.
-#     '''
-#     if request.args.get('state') != flask_session['state']:
-#         return buildJSONResponse('Invalid state token for gConnect.', 401)
-#     else:
-#         # create credentials object
-#         code = request.data
-#         try:
-#             oauth_flow = flow_from_clientsecrets('client_secrets.json',
-#                                                  scope='')
-#             oauth_flow.redirect_uri = 'postmessage'
-#             credentials = oauth_flow.step2_exchange(code)
-#             flask_session['credentials'] = credentials.to_json()
-#         except FlowExchangeError:
-#             return buildJSONResponse('Failed to create credentials object' + \
-#                                       ' code.', 401)
-#         # validate access token
-#         access_token = credentials.access_token
-#         url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token' + \
-#                '=%s' % access_token)
-#         http_client_instance = httplib2.Http()
-#         result = json.loads(http_client_instance.request(url, 'GET')[1])
-#         if result.get('error') is not None:
-#             return buildJSONResponse(result.get('error'), 500)
-#         # Does token match this user?
-#         gplus_id = credentials.id_token['sub']
-#         if result['user_id'] != gplus_id:
-#             return buildJSONResponse('Token does not match user.', 401)
-#         # Does token match this application?
-#         elif result['issued_to'] != CLIENT_ID:
-#             return buildJSONResponse('Token does not match application', 401)
-#         stored_access_token = flask_session.get('access_token')
-#         stored_gplus_id = flask_session.get('gplus_id')
-#         if (stored_access_token is not None) and (gplus_id == stored_gplus_id):
-#             return buildJSONResponse('Current user is already logged in: %s' \
-#                                      % flask_session['username'], 200)
-#         
-#         # store credentials in session
-#         flask_session['access_token'] = credentials.access_token
-#         flask_session['gplus_id'] = gplus_id
-#         
-#         # get user info from Google
-#         userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
-#         params = {'access_token' : credentials.access_token, 'alt' : 'json'}
-#         answer = requests.get(userinfo_url, params=params)
-#         
-#         data = answer.json()
-#         
-#         # set flask session keys
-#         flask_session['username'] = data['name']
-#         flask_session['picture'] = data['picture']
-#         flask_session['email'] = data['email']
-#         # check this user's authorization status 
-#         
-#         return render_template("welcome.html",
-#                                user=flask_session['username'],
-#                                picture=flask_session['picture'])
-#         
-#         
+@app.route(GCONNECT, methods=['POST'])
+def gconnect():
+    '''Retrieve OAuth2 state token from client request and obtain 
+    authorization code from Google.
+    '''
+    if request.args.get('state') != flask_session['state']:
+        return buildJSONResponse('Invalid state token for gConnect.', 401)
+    else:
+        # create credentials object
+        code = request.data
+        try:
+            oauth_flow = flow_from_clientsecrets('client_secrets.json',
+                                                 scope='')
+            oauth_flow.redirect_uri = 'postmessage'
+            credentials = oauth_flow.step2_exchange(code)
+            flask_session['credentials'] = credentials.to_json()
+        except FlowExchangeError:
+            return buildJSONResponse('Failed to create credentials object' + \
+                                      ' code.', 401)
+        # validate access token
+        access_token = credentials.access_token
+        url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token' + \
+               '=%s' % access_token)
+        http_client_instance = httplib2.Http()
+        result = json.loads(http_client_instance.request(url, 'GET')[1])
+        if result.get('error') is not None:
+            return buildJSONResponse(result.get('error'), 500)
+        # Does token match this user?
+        gplus_id = credentials.id_token['sub']
+        if result['user_id'] != gplus_id:
+            return buildJSONResponse('Token does not match user.', 401)
+        # Does token match this application?
+        elif result['issued_to'] != CLIENT_ID:
+            return buildJSONResponse('Token does not match application', 401)
+        stored_access_token = flask_session.get('access_token')
+        stored_gplus_id = flask_session.get('gplus_id')
+        if (stored_access_token is not None) and (gplus_id == stored_gplus_id):
+            return buildJSONResponse('Current user is already logged in: %s' \
+                                     % flask_session['username'], 200)
+         
+        # store credentials in session
+        flask_session['access_token'] = credentials.access_token
+        flask_session['gplus_id'] = gplus_id
+         
+        # get user info from Google
+        userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
+        params = {'access_token' : credentials.access_token, 'alt' : 'json'}
+        answer = requests.get(userinfo_url, params=params)
+         
+        data = answer.json()
+         
+        # set flask session keys
+        flask_session['username'] = data['name']
+        flask_session['picture'] = data['picture']
+        flask_session['email'] = data['email']
+        # check this user's authorization status
+        checkUser() 
+         
+        return render_template("welcome.html",
+                               user=flask_session['username'],
+                               picture=flask_session['picture'])
+         
+         
 @app.route('/gdisconnect/', methods=['POST'])
 def gdisconnect():
     access_token = flask_session['access_token']
