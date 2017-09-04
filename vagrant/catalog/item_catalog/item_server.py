@@ -110,16 +110,16 @@ def teardown_session(exception):
     @param exception: any exception raised during the this context
     '''
     if not app.testing:
-        session = g._database.session
-        if session:
+        db_interface = getattr(g, '_database', None)
+        if db_interface:
             if exception:
-                session.rollback()
+                db_interface.db.session.rollback()
             else:
                 try:
-                    session.commit()
+                    db_interface.db.session.commit()
                 finally:
-                    session.close()
-    g._database = None
+                    db_interface.db.session.close()
+#     g._database = None
 
 
 def isLoggedIn(fun):
