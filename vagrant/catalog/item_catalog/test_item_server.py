@@ -371,8 +371,8 @@ class TestDatabase(unittest.TestCase):
     def setUp(self):
         mock = Mock()
         mock.populate()
-        sessionMaker = DBInterface.makeSessionFactory(testing=True)
-        session = sessionMaker()
+        session_maker = DBInterface.makeSessionFactory(testing=True)
+        session = session_maker()
         self.db = DBInterface(session)
     
     # Test get by id ------

@@ -44,8 +44,8 @@ class MockDB(object):
         createDB(testing=True)
         engine = create_engine('sqlite:///test_item_catalog.db')
         Base.metadata.bind = engine
-        sessionMaker = sessionmaker(bind=engine)
-        session = sessionMaker()
+        session_maker = sessionmaker(bind=engine)
+        session = session_maker()
         entities = [self.mock_users, self.pantries, self.categories,
                     self.items]
         for entity_type in entities:
