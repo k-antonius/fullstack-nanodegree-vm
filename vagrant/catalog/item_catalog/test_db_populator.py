@@ -2,6 +2,11 @@
 Created on Aug 5, 2017
 
 @author: kennethalamantia
+
+This module is a mock implementation of the database schema model implemented
+in the catalog_database_setup module. This is for testing purposes. The MockDB
+class is used in the db_API module only. Refer this this module when testing
+without the actual database.
 '''
 
 class User(object):

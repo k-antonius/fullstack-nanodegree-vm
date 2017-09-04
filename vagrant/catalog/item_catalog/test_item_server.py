@@ -2,12 +2,14 @@
 Created on Aug 5, 2017
 
 @author: kennethalamantia
+
+This module contains a test suite for the item_server and db_API modules.
 '''
-import item_server
 import unittest
-from test_db_populator import MockDB
-from db_API import DBInterface
-from actual_db_populator import MockDB as Mock
+import item_server
+from item_catalog.test_db_populator import MockDB
+from item_catalog.db_API import DBInterface
+from item_catalog.actual_db_populator import MockDB as Mock
 
 
 class TestMockDatabase(unittest.TestCase):

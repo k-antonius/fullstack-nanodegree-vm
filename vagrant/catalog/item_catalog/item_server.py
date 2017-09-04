@@ -119,11 +119,12 @@ def teardown_session(exception):
                     db_interface.db.session.commit()
                 finally:
                     db_interface.db.session.close()
-#     g._database = None
 
 
 def is_logged_in(fun):
     '''Checks to see if a user is logged in.
+    This function will add a keyword argument 'user' for the user model object
+    that is authorized before returning the wrapped view function.
     '''
     @wraps(fun)
     def wrapper(*args, **kwargs):
@@ -143,7 +144,11 @@ def is_logged_in(fun):
 
 
 def is_authorized(fun):
-    '''Checks whether a user is logged in and authorized to view a page.
+    '''Checks whether a user is logged in and authorized to view a page. This
+    wrapper cannot be used on view functions that do not take a pantry id as
+    a keyword argument.
+    This function will add a keyword argument 'user' for the user model object
+    that is authorized before returning the wrapped view function.
     '''
     @wraps(fun)
     def wrapper(*args, **kwargs):
@@ -334,7 +339,7 @@ def del_category(pantry_id, category_id, **kwargs):
 @app.route('/pantry/<int:pantry_id>/category/add/', methods=['GET', 'POST'])
 @is_authorized
 def add_category(pantry_id, **kwargs):
-    '''Add a category.
+    '''Add a category. Handle post requests for the addition.
     '''
     db = get_db_api()
     if request.method == 'POST':
@@ -378,7 +383,8 @@ def get_item_json(pantry_id, category_id, item_id, **kwargs):
 @app.route(DEL_ITEM, methods=['GET', 'POST'])
 @is_authorized
 def del_item(pantry_id, category_id, item_id, **kwargs):
-    '''Delete an item.
+    '''Delete an item. Handles displaying form and requesting post request 
+    from form.
     '''
     db_api = get_db_api()
     this_category = db_api.get_db_object_by_id('Category', category_id)
@@ -394,7 +400,7 @@ def del_item(pantry_id, category_id, item_id, **kwargs):
 @app.route(EDIT_ITEM, methods=['GET', 'POST'])
 @is_authorized
 def edit_item(pantry_id, category_id, item_id, **kwargs):
-    '''Edit an item.
+    '''Display the page to edit an item and handle related post requests.
     '''
     db_api = get_db_api()
     this_category = db_api.get_db_object_by_id('Category', category_id)
@@ -422,7 +428,8 @@ def edit_item(pantry_id, category_id, item_id, **kwargs):
 @app.route(ADD_ITEM, methods=['GET', 'POST'])
 @is_authorized
 def add_item(pantry_id, category_id, **kwargs):
-    '''Add an item.
+    '''Displays the page to add an item and handles a post request to add an
+    item.
     '''
     if request.method == 'POST':
         if request.form["new_item_name"]:
@@ -445,6 +452,10 @@ def add_item(pantry_id, category_id, **kwargs):
 
 @app.route(LOGIN)
 def login():
+    '''Displays the login template and set the state token.
+    N.B. This is not a securely generated random number. This implementation
+    should be changed before deploying this application for actual use.
+    '''
     state = ''.join(random.choice(string.ascii_uppercase +
                                   string.ascii_lowercase +
                                   string.digits)
@@ -454,6 +465,9 @@ def login():
 
 @app.route(LOGOUT, methods=['POST'])
 def logout():
+    '''Log the user out without disconnecting their OAuth2 provider account
+    from the application.
+    '''
     if flask_session and flask_session.get('email'):
         del flask_session['access_token']
         del flask_session['gplus_id']
@@ -563,9 +577,6 @@ def gdisconnect():
     before attempting to disconnect because the access token may be stale.
     '''
     access_token = flask_session['access_token']
-    print 'In fun gdisconnect, access token is %s' % access_token
-    print 'Username is'
-    print flask_session['username']
     if access_token is None:
         print 'No access token.'
         return build_json_response('Current user not connected.', 401)
@@ -573,7 +584,6 @@ def gdisconnect():
     % flask_session['access_token']
     http_client_instance = httplib2.Http()
     result = http_client_instance.request(url, 'GET')[0]
-    print 'restult is: %s' % result
     if result['status'] == '200':
         del flask_session['access_token']
         del flask_session['gplus_id']
@@ -582,10 +592,9 @@ def gdisconnect():
         del flask_session['picture']
         return redirect(url_for('login'))
     else:
-        print 'failed to revoke token'
         return build_json_response('failed to revoke token', 400)
 
 
 if __name__ == '__main__':
-    app.debug = True
+    app.debug = True # turn this off when deploying to a live server
     app.run(port=5001)

@@ -2,10 +2,12 @@
 Created on Aug 26, 2017
 
 @author: kennethalamantia
+
+This module contains information to populate the test database.
 '''
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from catalog_database_setup import Base, User, Pantry, Category, Item, createDB
+from catalog_database_setup import Base, User, Pantry, Category, Item, create_db
 
 class MockDB(object):
 
@@ -41,7 +43,10 @@ class MockDB(object):
                       Item('apple', 'shiny and red', 5, 1, 7)]
         
     def populate(self):
-        createDB(testing=True)
+        '''Use this method to create and populate an SQLite database with the 
+        information contained in this class.
+        '''
+        create_db(testing=True)
         engine = create_engine('sqlite:///test_item_catalog.db')
         Base.metadata.bind = engine
         session_maker = sessionmaker(bind=engine)
@@ -62,13 +67,5 @@ class MockDB(object):
         userA = session.query(User).filter_by(id=1).one()
         userA.children.append(pantryB)
         session.commit()
-#         for pantry in userA.pantries:
-#             print pantry.name
-        session.close()
-
-mDB = MockDB()
-mDB.populate()
-
-
-        
+        session.close()        
         
