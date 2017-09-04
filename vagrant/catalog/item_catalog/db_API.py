@@ -1,7 +1,19 @@
 '''
 Created on Aug 7, 2017
-
 @author: kennethalamantia
+
+This module contains three classes DBInterface, MockDBAccessor, and DBAccessor.
+DBInterface is the interface that the application uses to make database calls,
+allowing a complete separation of concerns between the application code and 
+database code.
+DBInterface makes call using the MockDBAccessor class when the testing flag
+is true. This allows the appication to be tested independently from a database.
+DBInterface useses DBAccessor to access a live database using SQLAlchemy.
+
+The structure of the scheme is based on the following parent-->child
+relationship: User-->Pantry(owned, not shared)-->Category-->Item. In the
+docstrings below, references to parent are to a direct parent and child to a 
+direct child.
 '''
 
 from sqlalchemy import create_engine, and_
@@ -31,7 +43,7 @@ class DBInterface(object):
         otherwise uses SQL Alchemy queries. 
         @param session: an SQL alchemy session for running a real database, 
         for testing session is an instance of MockDB from the test_db_populator
-        class. 
+        module. 
         '''
         self.testing = testing
         if self.testing:
@@ -51,12 +63,16 @@ class DBInterface(object):
     
     def getDBObjectById(self, objClass, objId):
         '''Get single database object based on its ID.
+        @param objClass: string class name of the model
+        @param objId: int id of the model
         '''
         return self.db.getObj(objClass, objId)
     
     def getAllObjects(self, objClass, parentId):
         '''Get all objets of given class. If superID is supplied,
         only objects directly related to superId will be returned.
+        @param objClass: string class name of the model
+        @param parentId: int id of the parent 
         '''
         return self.db.getAllObjects(objClass, parentId)
     
@@ -84,28 +100,50 @@ class DBInterface(object):
         '''Add an object to the database. 
         @param className: the name of the class the new object is to be
         an instance of
-        @param kwargs: keys are the fields of the class and values are the
-        data
+        @param args: values to populate the fields of the model class
         '''
         self.db.addObject(className, *args)
         
         
     def delObject(self, obj):
         '''CRUD delete this entity from the database.
+        @param obj: the object to be deleted
         '''
         self.db.delObject(obj) 
         
     def updateObject(self, obj):
         '''CRUD update on this database entity.
+        @param obj: the object to be deleted
         '''
         self.db.updateObject(obj)
 
 
 class MockDBAccessor(object):
+    '''This class accesses the mock database implemented in the 
+    test_db_populator module, allowing use of the application in a tightly
+    controlled environment without concern to the particular database
+    implementation. Notably, this implementation is intended to test the 
+    application logic and not perfectly model a database in terms of
+    consistency etc.  Refer to the individual functions below in conjunction
+    with the test_db_populator module to determine specific behaviour.
+     
+    When instanting this class, an instance of the
+    MockDB class must be passed as the session parameter of the constructor.
+    A different mock database could be used, provided the interface was the 
+    same.
+    '''
     def __init__(self, session):
+        '''Instantiate a new mock db test class. This class should only be
+        instantiated in the DBInterface class.
+        @param session: an instance of MockDB from test_db_populator
+        '''
         self.session = session
     
     def getUserByEmail(self, email):
+        '''Get user object by email address.
+        @param email: string email address
+        @return: the user model object or None if not found
+        '''
         try:
             return filter(lambda x: x.email == email, 
                           self.session.mock_db.get("User"))[0]
@@ -113,6 +151,11 @@ class MockDBAccessor(object):
             return None
         
     def getObj(self, objClass, objId):
+        '''Get a model object by class name and id.
+        @param objClass: string name of the model
+        @param objId: the int id of the model object
+        @return: model object instance or None if not found
+        '''
         try:
             return filter(lambda x: x.id == objId,
                           self.session.mock_db.get(objClass))[0]
@@ -121,6 +164,12 @@ class MockDBAccessor(object):
             
                           
     def getObjByName(self, objClass, objName, objParentId):
+        '''Get a model object by its name field.
+        @param objClass: model class name
+        @param objName: name of individual model object
+        @param objParentId: int id of the parent
+        @return: model object instance or None if not found
+        '''
         try:
             return filter(lambda x: x.name == objName and x.parent_id\
                            == objParentId,
@@ -131,6 +180,8 @@ class MockDBAccessor(object):
     def getAllObjects(self, objClass, parentId):
         '''Returns a list of all object of a specific mapped class in
         the table with a given parent relationship.
+        @param objClass: model class name
+        @param parentId: int id of the parent
         '''
         return filter(lambda x: x.parent_id == parentId, 
                       self.session.mock_db.get(objClass))
@@ -142,7 +193,10 @@ class MockDBAccessor(object):
         return filter(lambda x: x.id in user.pantries, self.session.pantries)
         
     def addObject(self, className, *args):
-        '''Create a new entry in the mock table. 
+        '''Add an object to the database. 
+        @param className: the name of the class the new object is to be
+        an instance of
+        @param args: values to populate the fields of the model class
         '''
         mockTable = self.session.mock_db.get(className)
         # get the constructor from the mock database --
@@ -164,7 +218,8 @@ class MockDBAccessor(object):
             user[0].pantries.append(newObj.id)
     
     def delObject(self, obj):
-        '''Delete an object from the list.
+        '''Delete an object from the mock database.
+        @param obj: model object to delete
         '''
         mockTable = self.session.mock_db.get(obj.__class__.__name__)
         mockTable.remove(obj)
@@ -181,10 +236,19 @@ class MockDBAccessor(object):
 
 class DBAccessor(object):
     '''Provides access to the database as necessary.
-    Serves as a mid-layer between the ORM and view functions. 
+    Serves as a mid-layer between the ORM and view functions. See module and
+    DBInterface documentation for more details. This class should only be 
+    instantiated in the DBInterface class. 
     ''' 
      
     def __init__(self, session):
+        '''Should only be called in DBInterface class.
+        @param session: SQLAlchemy session instance.
+        @field classes: model class names, used to look up constructor
+        @field parents: mapping of child to parent, used to determine type of
+        parent knowing model class of child when adding a child in a many-one
+        relationship 
+        '''
         self.session = session
         # access to constructor from string
         self.classes = {'User' : User,
@@ -198,8 +262,8 @@ class DBAccessor(object):
       
     def getObj(self, objClassName, objId):
         '''Returns an ORM object. Raise an exception if more than one is found.
-        @param objClass: ORM table class, as a string
-        @param objID: integer id of the object to query for
+        @param objClassName: ORM table class, as a string
+        @param objId: integer id of the object to query for
         '''
         objClass = self.classes[objClassName]
         return self.session.query(objClass).\
