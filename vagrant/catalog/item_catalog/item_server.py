@@ -452,6 +452,17 @@ def login():
     flask_session['state'] = state
     return render_template(LOGIN_TEMPLATE, STATE=state)
 
+@app.route(LOGOUT)
+def logout():
+    if flask_session and flask_session.get('email'):
+        del flask_session['username']
+        del flask_session['email']
+        del flask_session['picture']
+        flash('you were logged out')
+        return redirect(url_for('login'))
+    else:
+        flash('you were alreadyed logged out')
+        return redirect(url_for('login'))
 
 def buildJSONResponse(msg, response_code):
     '''Helper method to build a json response.
