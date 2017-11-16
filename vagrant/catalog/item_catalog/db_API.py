@@ -35,7 +35,7 @@ class DBInterface(object):
         if testing:
             engine = create_engine('sqlite:///test_item_catalog.db')
         else:
-            engine = create_engine('sqlite:///item_catalog.db')
+            engine = create_engine('posgresql://catalog:what a drag@localhost/catalog')
         Base.metadata.bind = engine
         return sessionmaker(bind=engine)
 
