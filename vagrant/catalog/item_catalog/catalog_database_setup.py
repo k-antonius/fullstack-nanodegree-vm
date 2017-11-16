@@ -141,7 +141,7 @@ def create_db(testing=False):
     if testing:
         engine = create_engine('sqlite:///test_item_catalog.db')
     else:
-        engine = create_engine('posgresql://catalog:what a drag@localhost/catalog')
+        engine = create_engine('postgresql://catalog:what a drag@localhost/catalog')
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
 
