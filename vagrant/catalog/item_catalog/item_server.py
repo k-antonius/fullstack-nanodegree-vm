@@ -3,6 +3,7 @@ Created on Jul 8, 2017
 
 @author: kennethalamantia
 '''
+import os
 import random, string
 from functools import wraps
 import json
@@ -16,9 +17,10 @@ import requests
 from item_catalog.db_API import DBInterface
 app = Flask(__name__)
 
+CLIENT_SECRETS_PATH = os.path.abspath('client_secrets.json')
 app.secret_key = 'development_key'  # make better and move to other module
 CLIENT_ID = json.loads(
-    open('client_secrets.json', 'r').read())['web']['client_id']
+    open(CLIENT_SECRETS_PATH, 'r').read())['web']['client_id']
 APPLICATION_NAME = 'Web client 1'
 
 # hooks into test code
